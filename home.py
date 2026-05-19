@@ -14,7 +14,7 @@ import streamlit as st
 
 
 BASE_DIR = Path(__file__).resolve().parent
-APP_VERSION = "0.2.3-earthquake-20260506"
+APP_VERSION = "0.2.4"
 
 URLS = {
     "lab": "https://envgeo.h.kyoto-u.ac.jp/simple-earthquake-hypocenter-visualization/",
@@ -118,6 +118,7 @@ def render_tab_style() -> None:
         }
         div[data-baseweb="tab-list"] button[role="tab"] {
             background: rgba(248, 249, 250, 0.95);
+            color: #1f2937;
             border: 1px solid rgba(49, 51, 63, 0.22);
             border-radius: 6px 6px 0 0;
             padding: 0.35rem 0.65rem;
@@ -127,12 +128,39 @@ def render_tab_style() -> None:
         }
         div[data-baseweb="tab-list"] button[role="tab"] p {
             margin: 0;
+            color: inherit;
         }
         div[data-baseweb="tab-list"] button[role="tab"][aria-selected="true"] {
             background: linear-gradient(180deg, #e8f2ff 0%, #ddeaff 100%);
             border-color: #4a90e2;
             color: #0b3e75;
             box-shadow: inset 0 0 0 1px rgba(74, 144, 226, 0.35);
+        }
+        html[data-theme="dark"] div[data-baseweb="tab-list"] button[role="tab"],
+        body[data-theme="dark"] div[data-baseweb="tab-list"] button[role="tab"] {
+            background: rgba(44, 49, 61, 0.96);
+            color: rgba(245, 247, 250, 0.95);
+            border-color: rgba(240, 244, 250, 0.26);
+        }
+        html[data-theme="dark"] div[data-baseweb="tab-list"] button[role="tab"][aria-selected="true"],
+        body[data-theme="dark"] div[data-baseweb="tab-list"] button[role="tab"][aria-selected="true"] {
+            background: linear-gradient(180deg, #204061 0%, #1a314a 100%);
+            color: #e9f2ff;
+            border-color: #76adff;
+            box-shadow: inset 0 0 0 1px rgba(118, 173, 255, 0.42);
+        }
+        @media (prefers-color-scheme: dark) {
+            div[data-baseweb="tab-list"] button[role="tab"] {
+                background: rgba(44, 49, 61, 0.96);
+                color: rgba(245, 247, 250, 0.95);
+                border-color: rgba(240, 244, 250, 0.26);
+            }
+            div[data-baseweb="tab-list"] button[role="tab"][aria-selected="true"] {
+                background: linear-gradient(180deg, #204061 0%, #1a314a 100%);
+                color: #e9f2ff;
+                border-color: #76adff;
+                box-shadow: inset 0 0 0 1px rgba(118, 173, 255, 0.42);
+            }
         }
         @media (max-width: 900px) {
             div[data-baseweb="tab-list"] button[role="tab"] {
@@ -164,13 +192,14 @@ def main():
 
     render_tab_style()
     st.caption("Select a tab to switch information sections.")
-    tab_main, tab_about, tab_sources, tab_manual, tab_limits, tab_readme = st.tabs(
+    tab_main, tab_about, tab_sources, tab_manual, tab_limits, tab_updates, tab_readme = st.tabs(
         [
             "🏠 Main",
             "ℹ️ About",
             "🧾 Data Sources",
             "🛠️ Manual",
             "⚠️ Limitations",
+            "🆕 Updates",
             "📘 README",
         ]
     )
@@ -330,6 +359,30 @@ Core concepts:
             "For emergency information in Japan, use official sources such as the Japan "
             "Meteorological Agency and local government disaster information. For global "
             "earthquake information, check the relevant official seismic agency."
+        )
+
+    with tab_updates:
+        st.header("Update History")
+        st.markdown(
+            """
+- `0.2.4` (2026-05-19)
+  - **Changed:** Cross-section longitude input range expanded to `-360 to 360`.
+  - **Improved:** Dateline-crossing A-B calculations and map rendering.
+  - **Changed:** Section half-width default unified to `300 km`.
+
+- `0.2.3` (2026-05-06)
+  - **Added:** Expanded regional presets for major seismic belts.
+  - **Improved:** English/Japanese page structure and advanced comparison workflow.
+
+- `0.2.2` (2026-05-05)
+  - **Improved:** Advanced layout, legend behavior, and cross-section usability.
+
+- `0.2.1` (2026-05-04)
+  - **Added:** Pacific-centered view options and Z-aspect controls for 3D maps.
+
+- `0.2.0` (2026-05-04)
+  - **Added:** Initial earthquake app release based on the EnvGeo-Seawater workflow.
+            """
         )
 
     with tab_readme:
