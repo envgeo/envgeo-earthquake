@@ -14,7 +14,7 @@ import streamlit as st
 
 
 BASE_DIR = Path(__file__).resolve().parent
-APP_VERSION = "0.2.3-earthquake-20260506"
+APP_VERSION = "0.2.4"
 
 URLS = {
     "lab": "https://envgeo.h.kyoto-u.ac.jp/simple-earthquake-hypocenter-visualization/",
@@ -119,6 +119,7 @@ def render_tab_style() -> None:
         }
         div[data-baseweb="tab-list"] button[role="tab"] {
             background: rgba(248, 249, 250, 0.95);
+            color: #1f2937;
             border: 1px solid rgba(49, 51, 63, 0.22);
             border-radius: 6px 6px 0 0;
             padding: 0.35rem 0.65rem;
@@ -128,12 +129,39 @@ def render_tab_style() -> None:
         }
         div[data-baseweb="tab-list"] button[role="tab"] p {
             margin: 0;
+            color: inherit;
         }
         div[data-baseweb="tab-list"] button[role="tab"][aria-selected="true"] {
             background: linear-gradient(180deg, #e8f2ff 0%, #ddeaff 100%);
             border-color: #4a90e2;
             color: #0b3e75;
             box-shadow: inset 0 0 0 1px rgba(74, 144, 226, 0.35);
+        }
+        html[data-theme="dark"] div[data-baseweb="tab-list"] button[role="tab"],
+        body[data-theme="dark"] div[data-baseweb="tab-list"] button[role="tab"] {
+            background: rgba(44, 49, 61, 0.96);
+            color: rgba(245, 247, 250, 0.95);
+            border-color: rgba(240, 244, 250, 0.26);
+        }
+        html[data-theme="dark"] div[data-baseweb="tab-list"] button[role="tab"][aria-selected="true"],
+        body[data-theme="dark"] div[data-baseweb="tab-list"] button[role="tab"][aria-selected="true"] {
+            background: linear-gradient(180deg, #204061 0%, #1a314a 100%);
+            color: #e9f2ff;
+            border-color: #76adff;
+            box-shadow: inset 0 0 0 1px rgba(118, 173, 255, 0.42);
+        }
+        @media (prefers-color-scheme: dark) {
+            div[data-baseweb="tab-list"] button[role="tab"] {
+                background: rgba(44, 49, 61, 0.96);
+                color: rgba(245, 247, 250, 0.95);
+                border-color: rgba(240, 244, 250, 0.26);
+            }
+            div[data-baseweb="tab-list"] button[role="tab"][aria-selected="true"] {
+                background: linear-gradient(180deg, #204061 0%, #1a314a 100%);
+                color: #e9f2ff;
+                border-color: #76adff;
+                box-shadow: inset 0 0 0 1px rgba(118, 173, 255, 0.42);
+            }
         }
         @media (max-width: 900px) {
             div[data-baseweb="tab-list"] button[role="tab"] {
@@ -164,8 +192,8 @@ def main():
 
     render_tab_style()
     st.caption("タブを選択して表示セクションを切り替えてください。")
-    tab_main, tab_about, tab_sources, tab_manual, tab_limits, tab_readme = st.tabs(
-        ["🏠 メイン", "ℹ️ 概要", "🧾 データ出典", "🛠️ 使い方", "⚠️ 制約", "📘 README"]
+    tab_main, tab_about, tab_sources, tab_manual, tab_limits, tab_updates, tab_readme = st.tabs(
+        ["🏠 メイン", "ℹ️ 概要", "🧾 データ出典", "🛠️ 使い方", "⚠️ 制約", "🆕 更新履歴", "📘 README"]
     )
 
     with tab_main:
@@ -314,6 +342,30 @@ def main():
         st.write(
             "日本国内の緊急情報については、気象庁や自治体などの公式防災情報を確認してください。"
             "全球の地震情報については、対象地域の公式な地震観測機関の情報を確認してください。"
+        )
+
+    with tab_updates:
+        st.header("更新履歴")
+        st.markdown(
+            """
+- `0.2.4`（2026-05-19）
+  - **変更:** 断面経度入力範囲を `-360〜360` に拡張。
+  - **改善:** 日付変更線をまたぐ A-B 断面計算と地図表示を改善。
+  - **変更:** 断面半幅のデフォルトを `300 km` に統一。
+
+- `0.2.3`（2026-05-06）
+  - **追加:** 主要地震多発帯を含む地域プリセットを拡張。
+  - **改善:** 英語版/日本語版のページ構成と詳細比較ワークフローを調整。
+
+- `0.2.2`（2026-05-05）
+  - **改善:** 詳細版レイアウト・凡例表示・断面操作性を調整。
+
+- `0.2.1`（2026-05-04）
+  - **追加:** 3D で太平洋中心表示と Z 軸アスペクト調整を導入。
+
+- `0.2.0`（2026-05-04）
+  - **追加:** EnvGeo-Seawater ベースの地震可視化アプリ初期版を公開。
+            """
         )
 
     with tab_readme:

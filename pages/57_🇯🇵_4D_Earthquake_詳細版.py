@@ -22,7 +22,7 @@ import streamlit as st
 import envgeo_utils
 
 
-version = "0.2.3-ja" #2026/05/06
+version = "0.2.4" #2026/05/19
 
 st.set_page_config(
     page_title="EnvGeo-Earthquake",
@@ -81,6 +81,24 @@ REGION_BOUNDS = {
     HIMALAYA_REGION_LABEL: (65.0, 100.0, 20.0, 40.0),
     PHILIPPINES_REGION_LABEL: (117.0, 132.0, 5.0, 28.0),
 }
+# 断面プリセット（概略）。各地域で代表的なプレート境界に対して
+# できるだけ直交する向きになるよう設定。
+REGION_CROSS_SECTION_PRESETS = {
+    JAPAN_REGION_LABEL: (130.0, 41.0, 150.0, 37.0),
+    GLOBAL_REGION_LABEL: (130.0, 41.0, 150.0, 37.0),
+    INDONESIA_REGION_LABEL: (98.0, -8.0, 122.0, 2.0),
+    NEW_ZEALAND_REGION_LABEL: (166.0, -31.0, 178.0, -40.0),
+    CHILE_REGION_LABEL: (-78.0, -30.0, -68.0, -30.0),
+    ALEUTIAN_REGION_LABEL: (-170.0, 57.0, -150.0, 49.0),
+    ANTARCTIC_REGION_LABEL: (-58.0, -63.0, -32.0, -55.0),
+    CALIFORNIA_MEXICO_REGION_LABEL: (-126.0, 25.0, -112.0, 38.0),
+    KAMCHATKA_REGION_LABEL: (149.0, 58.0, 165.0, 49.0),
+    NORTH_PACIFIC_WIDE_REGION_LABEL: (145.0, 56.0, 178.0, 38.0),
+    MEDITERRANEAN_REGION_LABEL: (20.0, 40.0, 38.0, 34.0),
+    HIMALAYA_REGION_LABEL: (82.0, 38.0, 82.0, 24.0),
+    PHILIPPINES_REGION_LABEL: (121.0, 24.0, 129.0, 12.0),
+}
+CROSS_SECTION_PRESET_VERSION = "2026-05-19-a"
 USGS_PLATE_BOUNDARY_SERVICE = (
     "https://earthquake.usgs.gov/arcgis/rest/services/eq/map_plateboundaries/MapServer"
 )
@@ -566,20 +584,79 @@ def selected_area_km_ranges(
     )
 
 
+def _normalize_longitude_180(lon):
+    """
+    Normalize longitude to [-180, 180).
+    """
+    return ((float(lon) + 180.0) % 360.0) - 180.0
+
+
+def _unwrap_longitude_near_reference(lon, reference_lon):
+    """
+    Shift longitude by +/-360 so it stays within +/-180 of a reference longitude.
+    """
+    lon_value = float(lon)
+    reference = float(reference_lon)
+    while lon_value - reference > 180.0:
+        lon_value -= 360.0
+    while lon_value - reference < -180.0:
+        lon_value += 360.0
+    return lon_value
+
+
+def _cross_section_unwrapped_longitudes(start_lon, end_lon):
+    """
+    Return start/end longitudes on the same branch so the section follows the short side.
+    """
+    start_norm = _normalize_longitude_180(start_lon)
+    end_norm = _normalize_longitude_180(end_lon)
+    end_unwrapped = _unwrap_longitude_near_reference(end_norm, start_norm)
+    return float(start_norm), float(end_unwrapped)
+
+
+def region_cross_section_points(region_label):
+    """
+    Return region-based default cross-section endpoints.
+    """
+    default_points = REGION_CROSS_SECTION_PRESETS[JAPAN_REGION_LABEL]
+    points = REGION_CROSS_SECTION_PRESETS.get(region_label, default_points)
+    start_lon, start_lat, end_lon, end_lat = points
+    return (
+        _normalize_longitude_180(start_lon),
+        float(start_lat),
+        _normalize_longitude_180(end_lon),
+        float(end_lat),
+    )
+
+
 def default_cross_section_points(query):
     """
     Provide default section endpoints.
-
-    Default: Start = 130E, 41N; End = 150E, 37N.
     """
-    return 130.0, 41.0, 150.0, 37.0
+    region_label = query.get("region_preset", JAPAN_REGION_LABEL)
+    return region_cross_section_points(region_label)
+
+
+def apply_cross_section_points_to_session(region_label):
+    """
+    Reset cross-section endpoint inputs to the selected region preset.
+    """
+    start_lon, start_lat, end_lon, end_lat = region_cross_section_points(region_label)
+    st.session_state["eq_section_start_lon"] = float(start_lon)
+    st.session_state["eq_section_start_lat"] = float(start_lat)
+    st.session_state["eq_section_end_lon"] = float(end_lon)
+    st.session_state["eq_section_end_lat"] = float(end_lat)
+    st.session_state["eq_section_half_width"] = 300.0
+    st.session_state["eq_section_region_applied"] = region_label
+    st.session_state["eq_section_preset_version"] = CROSS_SECTION_PRESET_VERSION
 
 
 def add_cross_section_coordinates(df_plot, start_lon, start_lat, end_lon, end_lat):
     """
     Project hypocenters onto an arbitrary section line in local km coordinates.
     """
-    center_lon = (start_lon + end_lon) / 2
+    start_lon_unwrapped, end_lon_unwrapped = _cross_section_unwrapped_longitudes(start_lon, end_lon)
+    center_lon = (start_lon_unwrapped + end_lon_unwrapped) / 2
     center_lat = (start_lat + end_lat) / 2
     df_section = df_plot.copy()
     east_km, north_km = lonlat_to_local_km(
@@ -587,13 +664,15 @@ def add_cross_section_coordinates(df_plot, start_lon, start_lat, end_lon, end_la
         df_section["Latitude_degN"],
         center_lon,
         center_lat,
+        central_meridian=center_lon,
     )
 
     endpoint_east, endpoint_north = lonlat_to_local_km(
-        [start_lon, end_lon],
+        [start_lon_unwrapped, end_lon_unwrapped],
         [start_lat, end_lat],
         center_lon,
         center_lat,
+        central_meridian=center_lon,
     )
     start_x, end_x = float(endpoint_east.iloc[0]), float(endpoint_east.iloc[1])
     start_y, end_y = float(endpoint_north.iloc[0]), float(endpoint_north.iloc[1])
@@ -630,13 +709,15 @@ def cross_section_corridor_dataframe(start_lon, start_lat, end_lon, end_lat, hal
     """
     Build a lon/lat polygon showing the selected cross-section swath.
     """
-    center_lon = (start_lon + end_lon) / 2
+    start_lon_unwrapped, end_lon_unwrapped = _cross_section_unwrapped_longitudes(start_lon, end_lon)
+    center_lon = (start_lon_unwrapped + end_lon_unwrapped) / 2
     center_lat = (start_lat + end_lat) / 2
     endpoint_east, endpoint_north = lonlat_to_local_km(
-        [start_lon, end_lon],
+        [start_lon_unwrapped, end_lon_unwrapped],
         [start_lat, end_lat],
         center_lon,
         center_lat,
+        central_meridian=center_lon,
     )
     start_x, end_x = float(endpoint_east.iloc[0]), float(endpoint_east.iloc[1])
     start_y, end_y = float(endpoint_north.iloc[0]), float(endpoint_north.iloc[1])
@@ -668,6 +749,7 @@ def cross_section_corridor_dataframe(start_lon, start_lat, end_lon, end_lat, hal
         center_lon,
         center_lat,
     )
+    polygon_lon = wrap_longitudes_to_central_meridian(polygon_lon, center_lon)
     return pd.DataFrame(
         {
             "Longitude_degE": polygon_lon,
@@ -718,11 +800,13 @@ def set_region_japan():
         st.session_state.eq_region_hotspot = HOTSPOT_NONE_LABEL
         st.session_state.eq_region_choice = JAPAN_REGION_LABEL
         apply_region_bounds_to_session(JAPAN_REGION_LABEL)
+        apply_cross_section_points_to_session(JAPAN_REGION_LABEL)
     elif not st.session_state.eq_region_global:
         st.session_state.eq_region_japan = True
         st.session_state.eq_region_hotspot = HOTSPOT_NONE_LABEL
         st.session_state.eq_region_choice = JAPAN_REGION_LABEL
         apply_region_bounds_to_session(JAPAN_REGION_LABEL)
+        apply_cross_section_points_to_session(JAPAN_REGION_LABEL)
 
 
 def set_region_global():
@@ -734,11 +818,13 @@ def set_region_global():
         st.session_state.eq_region_hotspot = HOTSPOT_NONE_LABEL
         st.session_state.eq_region_choice = GLOBAL_REGION_LABEL
         apply_region_bounds_to_session(GLOBAL_REGION_LABEL)
+        apply_cross_section_points_to_session(GLOBAL_REGION_LABEL)
     elif not st.session_state.eq_region_japan:
         st.session_state.eq_region_global = True
         st.session_state.eq_region_hotspot = HOTSPOT_NONE_LABEL
         st.session_state.eq_region_choice = GLOBAL_REGION_LABEL
         apply_region_bounds_to_session(GLOBAL_REGION_LABEL)
+        apply_cross_section_points_to_session(GLOBAL_REGION_LABEL)
 
 
 def set_region_hotspot():
@@ -751,6 +837,7 @@ def set_region_hotspot():
         st.session_state.eq_region_global = False
         st.session_state.eq_region_choice = hotspot_choice
         apply_region_bounds_to_session(hotspot_choice)
+        apply_cross_section_points_to_session(hotspot_choice)
         return
 
     if st.session_state.get("eq_region_global", False):
@@ -762,6 +849,7 @@ def set_region_hotspot():
         st.session_state.eq_region_choice = JAPAN_REGION_LABEL
     if st.session_state.eq_region_choice in REGION_BOUNDS:
         apply_region_bounds_to_session(st.session_state.eq_region_choice)
+        apply_cross_section_points_to_session(st.session_state.eq_region_choice)
     st.session_state.eq_region_hotspot = HOTSPOT_NONE_LABEL
 
 
@@ -780,6 +868,13 @@ def main_region_selector():
             st.session_state.eq_region_hotspot = st.session_state.eq_region_choice
         else:
             st.session_state.eq_region_hotspot = HOTSPOT_NONE_LABEL
+    section_region_applied = st.session_state.get("eq_section_region_applied")
+    section_preset_version = st.session_state.get("eq_section_preset_version")
+    if (
+        section_region_applied != st.session_state.eq_region_choice
+        or section_preset_version != CROSS_SECTION_PRESET_VERSION
+    ):
+        apply_cross_section_points_to_session(st.session_state.eq_region_choice)
 
     current_choice = st.session_state.eq_region_choice
     if current_choice == JAPAN_REGION_LABEL:
@@ -1570,27 +1665,43 @@ def render_cross_section_location_map(
     """
     st.caption("断面位置マップ")
 
+    start_lon_unwrapped, end_lon_unwrapped = _cross_section_unwrapped_longitudes(start_lon, end_lon)
+    section_central_meridian = (start_lon_unwrapped + end_lon_unwrapped) / 2.0
+    endpoint_lon_wrapped = wrap_longitudes_to_central_meridian(
+        [start_lon_unwrapped, end_lon_unwrapped], section_central_meridian
+    )
+    df_plot_map = df_plot.copy()
+    df_plot_map["Longitude_degE"] = wrap_longitudes_to_central_meridian(
+        df_plot_map["Longitude_degE"], section_central_meridian
+    )
+    df_section_map = df_section.copy()
+    df_section_map["Longitude_degE"] = wrap_longitudes_to_central_meridian(
+        df_section_map["Longitude_degE"], section_central_meridian
+    )
+
     endpoint_df = pd.DataFrame(
         {
             "Label": ["A", "B"],
-            "Longitude_degE": [start_lon, end_lon],
+            "Longitude_degE": endpoint_lon_wrapped,
             "Latitude_degN": [start_lat, end_lat],
         }
     )
     context_df = pd.concat(
         [
-            df_plot[["Longitude_degE", "Latitude_degN"]].copy(),
+            df_plot_map[["Longitude_degE", "Latitude_degN"]].copy(),
             endpoint_df[["Longitude_degE", "Latitude_degN"]],
         ],
         ignore_index=True,
     )
-    center_lat, center_lon, auto_zoom = auto_map_view(context_df)
+    center_lat, center_lon, auto_zoom = auto_map_view(
+        context_df, lon_center_hint=section_central_meridian
+    )
 
     fig_location = go.Figure()
     fig_location.add_trace(
         go.Scattermapbox(
-            lat=df_plot["Latitude_degN"],
-            lon=df_plot["Longitude_degE"],
+            lat=df_plot_map["Latitude_degN"],
+            lon=df_plot_map["Longitude_degE"],
             mode="markers",
             name="全イベント",
             marker=dict(size=4, color="rgba(70, 70, 70, 0.28)"),
@@ -1620,16 +1731,16 @@ def render_cross_section_location_map(
         )
 
     if not df_section.empty:
-        selected_size = (2.0 + pd.to_numeric(df_section["Magnitude"], errors="coerce").fillna(0).clip(lower=0) * 2.6)
+        selected_size = (2.0 + pd.to_numeric(df_section_map["Magnitude"], errors="coerce").fillna(0).clip(lower=0) * 2.6)
         fig_location.add_trace(
             go.Scattermapbox(
-                lat=df_section["Latitude_degN"],
-                lon=df_section["Longitude_degE"],
+                lat=df_section_map["Latitude_degN"],
+                lon=df_section_map["Longitude_degE"],
                 mode="markers",
                 name="断面内イベント",
                 marker=dict(
                     size=(selected_size * viz["marker_size_scale_section"]).tolist(),
-                    color=pd.to_numeric(df_section[viz["color_column"]], errors="coerce"),
+                    color=pd.to_numeric(df_section_map[viz["color_column"]], errors="coerce"),
                     colorscale=earthquake_color_scale(viz["color_column"]),
                     cmin=color_range[0],
                     cmax=color_range[1],
@@ -1642,8 +1753,8 @@ def render_cross_section_location_map(
                         y=0.45,
                     ),
                 ),
-                text=df_section["Place"],
-                customdata=df_section[["DateTime_UTC", "Magnitude", "Depth_km", "SectionOffset_km"]],
+                text=df_section_map["Place"],
+                customdata=df_section_map[["DateTime_UTC", "Magnitude", "Depth_km", "SectionOffset_km"]],
                 hovertemplate=(
                     "%{text}<br>"
                     "%{customdata[0]}<br>"
@@ -1654,10 +1765,15 @@ def render_cross_section_location_map(
             )
         )
 
+    line_lon, line_lat = wrap_line_with_breaks(
+        [start_lon_unwrapped, end_lon_unwrapped],
+        [start_lat, end_lat],
+        section_central_meridian,
+    )
     fig_location.add_trace(
         go.Scattermapbox(
-            lat=[start_lat, end_lat],
-            lon=[start_lon, end_lon],
+            lat=line_lat,
+            lon=line_lon,
             mode="lines",
             name="断面 A-B",
             line=dict(color="#d7301f", width=4),
@@ -1717,8 +1833,8 @@ def render_cross_section_and_depth_profile(df_plot, query, viz, plate_boundary_d
         with col_start_lon:
             start_lon = st.number_input(
                 "始点 経度",
-                min_value=-180.0,
-                max_value=180.0,
+                min_value=-360.0,
+                max_value=360.0,
                 value=float(default_start_lon),
                 step=0.5,
                 key="eq_section_start_lon",
@@ -1735,8 +1851,8 @@ def render_cross_section_and_depth_profile(df_plot, query, viz, plate_boundary_d
         with col_end_lon:
             end_lon = st.number_input(
                 "終点 経度",
-                min_value=-180.0,
-                max_value=180.0,
+                min_value=-360.0,
+                max_value=360.0,
                 value=float(default_end_lon),
                 step=0.5,
                 key="eq_section_end_lon",
@@ -1755,14 +1871,9 @@ def render_cross_section_and_depth_profile(df_plot, query, viz, plate_boundary_d
             "断面半幅（km）",
             min_value=10.0,
             max_value=1000.0,
-            value=100.0 if query["region_preset"] == JAPAN_REGION_LABEL else 300.0,
+            value=300.0,
             step=10.0,
             key="eq_section_half_width",
-        )
-        limit_to_segment = st.checkbox(
-            "選択した区間に限定",
-            value=True,
-            key="eq_section_limit_to_segment",
         )
 
     df_section, section_length_km = add_cross_section_coordinates(
@@ -1785,8 +1896,7 @@ def render_cross_section_and_depth_profile(df_plot, query, viz, plate_boundary_d
         st.warning("断面の始点と終点を異なる座標にしてください。")
     else:
         section_mask = df_section["SectionOffset_km"].abs() <= half_width_km
-        if limit_to_segment:
-            section_mask &= df_section["SectionDistance_km"].between(0, section_length_km)
+        section_mask &= df_section["SectionDistance_km"].between(0, section_length_km)
         df_section = df_section[section_mask].copy()
 
         st.write(f"断面ウィンドウ内イベント数: {len(df_section)} 件")
@@ -2305,6 +2415,7 @@ def main():
         }
         div[data-baseweb="tab-list"] button[role="tab"] {
             background: rgba(248, 249, 250, 0.95);
+            color: #1f2937;
             border: 1px solid rgba(49, 51, 63, 0.22);
             border-radius: 6px 6px 0 0;
             padding: 0.30rem 0.54rem;
@@ -2316,12 +2427,39 @@ def main():
         }
         div[data-baseweb="tab-list"] button[role="tab"] p {
             margin: 0;
+            color: inherit;
         }
         div[data-baseweb="tab-list"] button[role="tab"][aria-selected="true"] {
             background: linear-gradient(180deg, #e8f2ff 0%, #ddeaff 100%);
             border-color: #4a90e2;
             color: #0b3e75;
             box-shadow: inset 0 0 0 1px rgba(74, 144, 226, 0.35);
+        }
+        html[data-theme="dark"] div[data-baseweb="tab-list"] button[role="tab"],
+        body[data-theme="dark"] div[data-baseweb="tab-list"] button[role="tab"] {
+            background: rgba(44, 49, 61, 0.96);
+            color: rgba(245, 247, 250, 0.95);
+            border-color: rgba(240, 244, 250, 0.26);
+        }
+        html[data-theme="dark"] div[data-baseweb="tab-list"] button[role="tab"][aria-selected="true"],
+        body[data-theme="dark"] div[data-baseweb="tab-list"] button[role="tab"][aria-selected="true"] {
+            background: linear-gradient(180deg, #204061 0%, #1a314a 100%);
+            color: #e9f2ff;
+            border-color: #76adff;
+            box-shadow: inset 0 0 0 1px rgba(118, 173, 255, 0.42);
+        }
+        @media (prefers-color-scheme: dark) {
+            div[data-baseweb="tab-list"] button[role="tab"] {
+                background: rgba(44, 49, 61, 0.96);
+                color: rgba(245, 247, 250, 0.95);
+                border-color: rgba(240, 244, 250, 0.26);
+            }
+            div[data-baseweb="tab-list"] button[role="tab"][aria-selected="true"] {
+                background: linear-gradient(180deg, #204061 0%, #1a314a 100%);
+                color: #e9f2ff;
+                border-color: #76adff;
+                box-shadow: inset 0 0 0 1px rgba(118, 173, 255, 0.42);
+            }
         }
         @media (max-width: 900px) {
             div[data-baseweb="tab-list"] button[role="tab"] {
