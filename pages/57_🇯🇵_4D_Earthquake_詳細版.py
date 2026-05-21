@@ -928,6 +928,7 @@ def sidebar_controls(region_preset):
     Sidebar controls for USGS API query parameters.
     """
     now_utc = datetime.now(timezone.utc)
+    min_selectable_date = datetime(1800, 1, 1, tzinfo=timezone.utc).date()
     default_end_date = now_utc.date()
     default_start_date = default_end_date - timedelta(days=30)
 
@@ -938,6 +939,8 @@ def sidebar_controls(region_preset):
         date_range = st.date_input(
             "期間（UTC）",
             value=(default_start_date, default_end_date),
+            min_value=min_selectable_date,
+            max_value=default_end_date,
             key="eq_date_range",
         )
 
