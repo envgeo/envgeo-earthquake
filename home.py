@@ -4,7 +4,7 @@
 Home page for EnvGeo-Earthquake.
 
 This page is adapted from the EnvGeo-Seawater Streamlit home page and rewritten
-for a simple research/education earthquake visualization app.
+for a research and education earthquake-catalog exploration app.
 """
 
 import re
@@ -14,7 +14,7 @@ import streamlit as st
 
 
 BASE_DIR = Path(__file__).resolve().parent
-APP_VERSION = "0.2.4"
+APP_VERSION = "0.2.5"
 
 URLS = {
     "lab": "https://envgeo.h.kyoto-u.ac.jp/simple-earthquake-hypocenter-visualization/",
@@ -43,8 +43,8 @@ st.set_page_config(
         "Get Help": URLS["lab"],
         "Report a bug": URLS["contact"],
         "About": (
-            "EnvGeo-Earthquake: a simple research/education earthquake "
-            "visualization app based on EnvGeo-Seawater."
+            "EnvGeo-Earthquake: a research and education earthquake-catalog "
+            "exploration app based on EnvGeo-Seawater."
             "https://envgeo.h.kyoto-u.ac.jp"
             " / (Toyoho Ishimura@Kyoto-Univ. 2026) "
         ),
@@ -176,16 +176,17 @@ def render_tab_style() -> None:
 
 def main():
     st.title("EnvGeo-Earthquake")
-    st.subheader("Simple earthquake hypocenter visualization for research and education")
+    st.subheader("Interactive earthquake hypocenter exploration for research and education")
     st.write(
-        "EnvGeo-Earthquake is a Streamlit app for exploring earthquake hypocenters "
-        "by time, location, magnitude, and depth. It was built by adapting the "
-        "EnvGeo-Seawater 3D/4D visualization workflow(https://envgeo.h.kyoto-u.ac.jp/sw_jpn/) to earthquake catalog data."
+        "EnvGeo-Earthquake is a Streamlit-based research app for exploring earthquake "
+        "hypocenters by time, location, magnitude, and depth. It adapts the "
+        "EnvGeo-Seawater 3D/4D visualization workflow "
+        "(https://envgeo.h.kyoto-u.ac.jp/sw_jpn/) to earthquake catalog data."
     )
     st.write(f"Version: {APP_VERSION}")
     st.caption("Data source: USGS Earthquake Catalog API (GeoJSON, eventtype=earthquake).")
     st.warning(
-        "This app is for research, education, and exploratory visualization. "
+        "This app is for exploratory research, education, and reproducible visualization workflows. "
         "It is not an official earthquake alert, tsunami warning, hazard assessment, "
         "or disaster-response tool."
     )
@@ -213,9 +214,9 @@ def main():
         with col_basic:
             st.subheader("4D Visualizer Earthquake")
             st.write(
-                "A simple earthquake-only visualizer. Fetch USGS earthquake data, "
+                "A focused earthquake-catalog visualizer. Fetch USGS earthquake data, "
                 "filter by date, magnitude, depth, and area, then view the results "
-                "as basic 2D and 3D/4D hypocenter maps."
+                "as 2D and 3D/4D hypocenter maps."
             )
 
         with col_advanced:
@@ -245,17 +246,23 @@ def main():
     with tab_about:
         st.header("About")
         st.write(
-            "EnvGeo-Earthquake is a compact earthquake visualization app created from "
-            "the EnvGeo-Seawater(https://envgeo.h.kyoto-u.ac.jp/sw_jpn/) code base. EnvGeo-Seawater originally focused on "
-            "interactive 3D/4D visualization of oceanographic and geochemical datasets; "
-            "this earthquake version reuses that spatial visualization idea for "
-            "hypocenter data."
+            "EnvGeo-Earthquake is an earthquake-catalog exploration app developed from "
+            "the EnvGeo-Seawater (https://envgeo.h.kyoto-u.ac.jp/sw_jpn/) workflow. "
+            "EnvGeo-Seawater focuses on interactive 3D/4D visualization of oceanographic "
+            "and geochemical datasets; this earthquake version applies the same "
+            "source-aware spatial workflow to hypocenter data."
         )
         st.write(
             "The goal is not to replace official earthquake services. The goal is to "
             "make catalog filtering, 2D/3D mapping, cross-section analysis, and "
             "source-aware data handling accessible in a teaching or exploratory "
             "research setting."
+        )
+        st.write(
+            "The app is also a practical test case for future EnvGeo shared-core work, "
+            "including map presets, local kilometer coordinates, 3D/4D layout helpers, "
+            "and cross-section workflows that may be reused by EnvGeo-Seawater and "
+            "other geoscience visualizers."
         )
         st.markdown(
             """
@@ -365,6 +372,11 @@ Core concepts:
         st.header("Update History")
         st.markdown(
             """
+- `0.2.5` (2026-09-16)
+  - **Improved:** README page names now match the current English/Japanese Streamlit pages.
+  - **Improved:** Local tests now focus on Earthquake behavior and skip inherited Seawater dataset checks when those files are not bundled.
+  - **Improved:** README and Home text now describe the long-term relationship with EnvGeo-Seawater and future shared-core candidates.
+
 - `0.2.4` (2026-05-19)
   - **Changed:** Cross-section longitude input range expanded to `-360 to 360`.
   - **Improved:** Dateline-crossing A-B calculations and map rendering.

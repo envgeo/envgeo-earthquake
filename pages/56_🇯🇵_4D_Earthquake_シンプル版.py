@@ -18,7 +18,7 @@ import streamlit as st
 import envgeo_utils
 
 
-version = "0.2.4" #2026/05/19
+version = "0.2.5" #2026/09/16
 
 
 st.set_page_config(
@@ -29,7 +29,7 @@ st.set_page_config(
         "Report a bug": "https://www.h.kyoto-u.ac.jp/en_f/faculty_f/ishimura_toyoho_4dea/#mailform",
         "About": (
             "EnvGeo-Earthquake: EnvGeo-Seawater をもとにした、"
-            "研究・教育向けの簡易地震可視化アプリです。/ "
+            "研究・教育向けの地震カタログ探索アプリです。/ "
             "https://envgeo.h.kyoto-u.ac.jp"
             " / (Toyoho Ishimura@Kyoto-Univ. 2026) "
         ),
@@ -867,7 +867,7 @@ def render_2d_distribution_map(df_plot, query, viz):
     Render the selected hypocenters on an interactive map.
     """
     st.divider()
-    st.subheader("地理分布図（自動ズーム）")
+    st.subheader("2D 震源マップ（自動ズーム）")
 
     map_mode = st.radio(
         "地図スタイル:",
@@ -966,7 +966,7 @@ def display_earthquake_table(df_eq):
 
 def main():
     st.title(f"EnvGeo-Earthquake")
-    st.header(f"4D Visualizer Earthquake 簡易版（{version}）")
+    st.header(f"4D Visualizer Earthquake 基本版（{version}）")
     st.caption("データソース: USGS Earthquake Catalog（速報値を含み、後日更新される場合があります）。")
 
     with st.expander("データ利用上の注意", expanded=False):
@@ -981,7 +981,7 @@ def main():
         st.write("データ取得元: USGS Earthquake Catalog API（GeoJSON, eventtype=earthquake）")
         st.write(
             "本アプリは EnvGeo-Seawater の可視化ワークフローを地震データへ展開した、"
-            "研究教育向けの簡易可視化ページです。"
+            "研究・教育向けの震源カタログ探索ページです。"
         )
 
     region_preset = main_region_selector()

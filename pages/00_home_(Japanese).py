@@ -4,7 +4,7 @@
 EnvGeo-Earthquake のホームページ（日本語版）。
 
 このページは EnvGeo-Seawater の Streamlit ホームページをもとに、
-研究・教育向けの簡易的な地震可視化アプリ用に書き換えたものです。
+研究・教育向けの地震カタログ探索アプリ用に書き換えたものです。
 """
 
 import re
@@ -14,7 +14,7 @@ import streamlit as st
 
 
 BASE_DIR = Path(__file__).resolve().parent
-APP_VERSION = "0.2.4"
+APP_VERSION = "0.2.5"
 
 URLS = {
     "lab": "https://envgeo.h.kyoto-u.ac.jp/simple-earthquake-hypocenter-visualization/",
@@ -44,7 +44,7 @@ st.set_page_config(
         "Report a bug": URLS["contact"],
         "About": (
             "EnvGeo-Earthquake: EnvGeo-Seawater をもとにした、"
-            "研究・教育向けの簡易地震可視化アプリです。/ "
+            "研究・教育向けの地震カタログ探索アプリです。/ "
             "https://envgeo.h.kyoto-u.ac.jp"
             " / (Toyoho Ishimura@Kyoto-Univ. 2026) "
         ),
@@ -177,16 +177,17 @@ def render_tab_style() -> None:
 
 def main():
     st.title("EnvGeo-Earthquake")
-    st.subheader("研究・教育向けの簡易地震震源可視化アプリ")
+    st.subheader("研究・教育向けの地震震源カタログ探索アプリ")
     st.write(
-        "EnvGeo-Earthquake は、地震の震源を時刻・位置・マグニチュード・深さに基づいて"
-        "探索するための Webアプリです。EnvGeo-Seawater(https://envgeo.h.kyoto-u.ac.jp/sw_jpn/) の 3D/4D 可視化ワークフローを、"
+        "EnvGeo-Earthquake は、地震の震源を時刻・位置・マグニチュード・深さに基づいて "
+        "探索するための研究用 Web アプリです。EnvGeo-Seawater "
+        "(https://envgeo.h.kyoto-u.ac.jp/sw_jpn/) の 3D/4D 可視化ワークフローを、"
         "地震カタログデータに応用して構築しました。"
     )
     st.write(f"バージョン: {APP_VERSION}")
     st.caption("データソース: USGS Earthquake Catalog API（GeoJSON, eventtype=earthquake）。")
     st.warning(
-        "このアプリは研究・教育・探索的可視化を目的としたものです。"
+        "このアプリは探索的研究、教育、再現可能な可視化ワークフローを支援するためのものです。"
         "公式の地震速報、津波警報、ハザード評価、防災対応ツールではありません。"
     )
 
@@ -205,15 +206,15 @@ def main():
         with col_basic:
             st.subheader("4D Visualizer Earthquake")
             st.write(
-                "地震データ専用のシンプルな可視化ページです。USGS地震データを取得し、"
+                "地震カタログに焦点を当てた可視化ページです。USGS 地震データを取得し、"
                 "日付、マグニチュード、深さ、地域でフィルタしたうえで、"
-                "基本的な 2D マップおよび 3D/4D 震源マップとして表示します。"
+                "2D マップおよび 3D/4D 震源マップとして表示します。"
             )
 
         with col_advanced:
             st.subheader("4D Visualizer Earthquake Advanced")
             st.write(
-                "地震データを詳細に探索するための発展版可視化ページです。"
+                "地震データを詳細に探索するための詳細版ページです。"
                 "2D マップ、3D/4D 震源プロット、プレート境界表示、"
                 "断面図、深度プロファイル、時系列ヒストグラム、"
                 "JMA/NIED カタログ比較機能を含みます。"
@@ -228,22 +229,27 @@ def main():
 - 沈み込み帯に沿って震源深さはどのように変化するか？
 - 大きなマグニチュードの地震は、特定の深さ範囲に集中しているか？
 - 選択した期間内で、地震活動は時間的にどのように変化するか？
-- 日本周辺において、USGS の震源位置とアップロードしたユーザーデータ（JMA/NIEDのデータなど） との比較はどうか？（Advancedページ内）
+- 日本周辺において、USGS の震源位置とアップロードしたユーザーデータ（JMA/NIED のデータなど）はどのように異なるか？（Advanced ページ内）
             """
         )
 
     with tab_about:
         st.header("About")
         st.write(
-            "EnvGeo-Earthquake は、EnvGeo-Seawater(https://envgeo.h.kyoto-u.ac.jp/sw_jpn/) のコードベースから作成したコンパクトな"
-            "地震可視化アプリです。EnvGeo-Seawater はもともと、海洋学・地球化学データの"
-            "インタラクティブな 3D/4D 可視化を目的としていました。本アプリでは、その空間可視化の"
-            "考え方を震源データに応用しています。"
+            "EnvGeo-Earthquake は、EnvGeo-Seawater "
+            "(https://envgeo.h.kyoto-u.ac.jp/sw_jpn/) のワークフローをもとにした"
+            "地震カタログ探索アプリです。EnvGeo-Seawater は、海洋学・地球化学データの"
+            "インタラクティブな 3D/4D 可視化を目的としています。本アプリでは、その出典を明示する"
+            "空間可視化ワークフローを震源データに応用しています。"
         )
         st.write(
             "目的は、公式の地震情報サービスを置き換えることではありません。"
             "カタログのフィルタリング、2D/3D マッピング、断面解析、出典を意識したデータ処理を、"
             "教育や探索的研究の場で利用しやすくすることを目的としています。"
+        )
+        st.write(
+            "また本アプリは、地図プリセット、ローカル km 座標、3D/4D レイアウト、断面図処理などを、"
+            "将来 EnvGeo-Seawater や他の地球科学可視化アプリと共有するための実例としても位置づけています。"
         )
         st.markdown(
             """
@@ -289,7 +295,7 @@ def main():
 
         st.subheader("JMA / NIED 比較")
         st.write(
-            "Advancedページには、手動でアップロードした JMA/NIED 表データとの比較機能があります。"
+            "Advanced ページには、手動でアップロードした JMA/NIED 表データとの比較機能があります。"
             "JMA や NIED のサービスを自動的にスクレイピングするものではありません。"
             "これらのカタログをダウンロードまたは再配布する際は、各提供元の利用条件や謝辞要件を確認してください。"
         )
@@ -348,6 +354,11 @@ def main():
         st.header("更新履歴")
         st.markdown(
             """
+- `0.2.5`（2026-09-16）
+  - **改善:** README のページ名を現在の英語版・日本語版 Streamlit ページ構成に合わせて更新。
+  - **改善:** ローカルテストを Earthquake 固有機能中心にし、同梱されていない Seawater データセットの確認はスキップするよう調整。
+  - **改善:** README と Home の説明に、EnvGeo-Seawater との関係と将来の共通コア候補を明記。
+
 - `0.2.4`（2026-05-19）
   - **変更:** 断面経度入力範囲を `-360〜360` に拡張。
   - **改善:** 日付変更線をまたぐ A-B 断面計算と地図表示を改善。
@@ -364,7 +375,7 @@ def main():
   - **追加:** 3D で太平洋中心表示と Z 軸アスペクト調整を導入。
 
 - `0.2.0`（2026-05-04）
-  - **追加:** EnvGeo-Seawater ベースの地震可視化アプリ初期版を公開。
+  - **追加:** EnvGeo-Seawater ベースの地震カタログ探索アプリ初期版を公開。
             """
         )
 

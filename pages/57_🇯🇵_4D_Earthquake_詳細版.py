@@ -22,7 +22,7 @@ import streamlit as st
 import envgeo_utils
 
 
-version = "0.2.4" #2026/05/19
+version = "0.2.5" #2026/09/16
 
 st.set_page_config(
     page_title="EnvGeo-Earthquake",
@@ -32,7 +32,7 @@ st.set_page_config(
         "Report a bug": "https://www.h.kyoto-u.ac.jp/en_f/faculty_f/ishimura_toyoho_4dea/#mailform",
         "About": (
             "EnvGeo-Earthquake: EnvGeo-Seawater をもとにした、"
-            "研究・教育向けの簡易地震可視化アプリです。"
+            "研究・教育向けの地震カタログ探索アプリです。"
             " / (Toyoho Ishimura@Kyoto-Univ. 2026) "
         ),
     },
@@ -1526,7 +1526,7 @@ def render_2d_distribution_map(df_plot, query, viz, plate_boundary_df=None):
     Render the selected hypocenters on an interactive map.
     """
     color_range, _ = _resolve_color_range(viz, "2d")
-    st.subheader("地理分布図（自動ズーム）")
+    st.subheader("2D 震源マップ（自動ズーム）")
 
     map_mode = st.radio(
         "地図スタイル:",
@@ -2340,7 +2340,7 @@ def main():
         st.write("データ取得元: USGS Earthquake Catalog API（GeoJSON, eventtype=earthquake）")
         st.write(
             "本アプリは EnvGeo-Seawater の可視化ワークフローを地震データへ展開した、"
-            "研究教育向けの簡易可視化ページです。"
+            "研究・教育向けの震源カタログ探索ページです。"
         )
         st.write(
             "推奨引用: U.S. Geological Survey (2017), "
@@ -2399,7 +2399,7 @@ def main():
         if plate_errors and plate_boundary_df.empty:
             st.warning("USGS からプレート境界データを取得できませんでした。")
         elif plate_errors:
-            st.warning("USGS プレート境界サービスに接続できないため、日本周辺の簡易境界線を表示しています。")
+            st.warning("USGS プレート境界サービスに接続できないため、日本周辺の概略境界線を表示しています。")
         if not plate_boundary_df.empty:
             plate_boundary_note = (
                 f"プレート境界データ: {plate_source}。境界位置は概略です。教育・研究用の可視化として利用してください。"

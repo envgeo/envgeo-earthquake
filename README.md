@@ -1,28 +1,29 @@
 # EnvGeo-Earthquake
 
-EnvGeo-Earthquake is a simple Streamlit application for visualizing earthquake
-hypocenters for research and education.
+EnvGeo-Earthquake is an interactive platform for exploring earthquake
+hypocenter catalogs in research and education.
 
 [![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://streamlit.io/)
 [![Python](https://img.shields.io/badge/python-3.10--3.12-blue.svg)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-This application was created by adapting the spatial 3D/4D visualization workflow
-of **EnvGeo-Seawater** (https://envgeo.h.kyoto-u.ac.jp/sw_jpn/) to earthquake catalog data. The original EnvGeo-Seawater
-project focused on interactive visualization of oceanographic and marine
-geochemical data. EnvGeo-Earthquake keeps the educational, exploratory, and
-source-aware philosophy of that project.
+This application adapts the spatial 3D/4D visualization workflow of
+**EnvGeo-Seawater** (https://envgeo.h.kyoto-u.ac.jp/sw_jpn/) to earthquake
+catalog data. EnvGeo-Seawater was developed for interactive visualization of
+oceanographic and marine geochemical datasets; EnvGeo-Earthquake applies the
+same exploratory, source-aware approach to hypocenter catalogs.
 
-The app is intended for **simple research, teaching, and exploratory
-visualization**. It is not an official earthquake alert, tsunami warning,
-hazard assessment, or disaster-response system.
+The app is intended to support **exploratory data analysis**, teaching, and
+reproducible research workflows. It is not an official earthquake alert,
+tsunami warning, hazard assessment, or disaster-response system.
 
 ---
 
 ## Overview
 
 EnvGeo-Earthquake fetches earthquake hypocenter data from the USGS Earthquake
-Catalog API and visualizes the result as:
+Catalog API and visualizes the results through EnvGeo-style 2D, 3D, 4D, and
+section-based workflows:
 
 - 2D maps with marker size scaled by magnitude
 - 3D/4D hypocenter plots with depth, magnitude, and colorbar controls
@@ -32,19 +33,33 @@ Catalog API and visualizes the result as:
 - Japan-focused comparison with uploaded JMA/NIED catalog tables in the Advanced page
 - plate-boundary overlays from USGS where available
 
+The project is also used as a testbed for identifying which parts of the
+EnvGeo-Seawater workflow can become shared geoscience utilities, such as data
+normalization, source-aware metadata handling, map presets, local coordinate
+conversion, 3D/4D layout helpers, and cross-section tools.
+
 
 
 ---
 
 ## Main Pages
 
-The app uses the following Streamlit page files. 
+The Streamlit app uses `home.py` for the overview, data-source, manual,
+update-log, and README tabs. The `pages/` directory contains English and
+Japanese versions of the earthquake visualization workflows:
 
-- `pages/54_4D_Visualizer_Earthquake.py`
-  Basic earthquake-only USGS hypocenter visualizer.
+- `pages/54_🇺🇸_4D_Earthquake_Simple.py`
+  English focused USGS hypocenter visualizer.
 
-- `pages/55_4D_Visualizer_Earthquake_Advanced.py`
-  Advanced earthquake visualizer with plate boundaries, 2D/3D maps,
+- `pages/55_🇺🇸_4D_Earthquake_Advanced.py`
+  English advanced earthquake visualizer with plate boundaries, 2D/3D maps,
+  cross-section, depth profile, time histogram, and JMA/NIED comparison tools.
+
+- `pages/56_🇯🇵_4D_Earthquake_シンプル版.py`
+  Japanese focused USGS hypocenter visualizer.
+
+- `pages/57_🇯🇵_4D_Earthquake_詳細版.py`
+  Japanese advanced earthquake visualizer with plate boundaries, 2D/3D maps,
   cross-section, depth profile, time histogram, and JMA/NIED comparison tools.
 
 
@@ -69,6 +84,28 @@ The app uses the following Streamlit page files.
 - warning when the selected query reaches the 20,000-event API limit
 - concise source and data-use notes in the app
 - PC recommendation for 3D display and 2D recommendation for smartphones/tablets
+
+---
+
+## Relationship to EnvGeo-Seawater
+
+EnvGeo-Earthquake is intentionally kept close to EnvGeo-Seawater in structure,
+terminology, and visual workflow. The two applications currently remain
+separate, but future refactoring should treat the following as candidates for a
+shared EnvGeo core:
+
+- standardized geoscience column names and unit conventions
+- source and citation metadata displayed alongside data products
+- map background, regional preset, and coastline helper functions
+- longitude wrapping and local kilometer-coordinate conversion
+- reusable 3D/4D layout helpers
+- cross-section geometry and depth-profile workflows
+- user-upload validation and comparison-table normalization
+
+Earthquake-specific logic, such as USGS catalog queries, JMA/NIED comparison
+details, hypocenter terminology, and seismic-source limitations, should remain
+in the earthquake layer unless the same pattern is needed by other EnvGeo
+applications.
 
 ---
 
@@ -332,17 +369,24 @@ df.attrs["query_url"]
   Shared low-level utilities, including USGS API loading, GeoJSON normalization,
   mapping styles, coastline loading, and cache clearing.
 
-- `pages/54_4D_Visualizer_Earthquake.py`  
-  Basic earthquake visualizer.
+- `pages/54_🇺🇸_4D_Earthquake_Simple.py`  
+  English focused earthquake visualizer.
 
-- `pages/55_4D_Visualizer_Earthquake_Advanced.py`  
-  Advanced earthquake visualizer, including JMA/NIED comparison tools.
+- `pages/55_🇺🇸_4D_Earthquake_Advanced.py`  
+  English advanced earthquake visualizer, including JMA/NIED comparison tools.
+
+- `pages/56_🇯🇵_4D_Earthquake_シンプル版.py`  
+  Japanese focused earthquake visualizer.
+
+- `pages/57_🇯🇵_4D_Earthquake_詳細版.py`  
+  Japanese advanced earthquake visualizer, including JMA/NIED comparison tools.
 
 - `coastline/`  
   Local coastline coordinate files for 3D reference overlays.
 
 - `test/`  
-  Basic tests inherited from the project.
+  Local tests for utility imports, USGS GeoJSON normalization, and optional
+  inherited dataset checks.
 
 Legacy seawater-related directories and files may remain in the repository
 because this project was adapted from EnvGeo-Seawater. The earthquake-specific
@@ -415,8 +459,8 @@ workflows, please cite both the app and the original data providers.
 
 Suggested app citation:
 
-> Ishimura, T. (2026). EnvGeo-Earthquake: A simple research and education
-> earthquake visualization app based on EnvGeo-Seawater. Kyoto University.
+> Ishimura, T. (2026). EnvGeo-Earthquake: An interactive earthquake
+> hypocenter exploration app based on EnvGeo-Seawater. Kyoto University.
 
 Required or recommended data citations should include:
 

@@ -18,7 +18,7 @@ import streamlit as st
 import envgeo_utils
 
 
-version = "0.2.4" #2026/05/19
+version = "0.2.5" #2026/09/16
 
 
 st.set_page_config(
@@ -28,10 +28,10 @@ st.set_page_config(
         "Get Help": "https://envgeo.h.kyoto-u.ac.jp/simple-earthquake-hypocenter-visualization/",
         "Report a bug": "https://www.h.kyoto-u.ac.jp/en_f/faculty_f/ishimura_toyoho_4dea/#mailform",
         "About": (
-            "EnvGeo-Earthquake: a simple research/education earthquake "
-            "visualization app based on EnvGeo-Seawater."
+            "EnvGeo-Earthquake: a research and education earthquake-catalog "
+            "exploration app based on EnvGeo-Seawater."
             " / EnvGeo-Seawater をもとにした、"
-            "研究・教育向けの簡易地震可視化アプリです。/ "
+            "研究・教育向けの地震カタログ探索アプリです。/ "
             "https://envgeo.h.kyoto-u.ac.jp"
             " / (Toyoho Ishimura@Kyoto-Univ. 2026) "
         ),

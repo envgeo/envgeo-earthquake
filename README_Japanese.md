@@ -1,7 +1,7 @@
 # EnvGeo-Earthquake
 
-EnvGeo-Earthquake は、研究・教育向けに地震の震源を可視化するための
-シンプルな Streamlit アプリケーションです。
+EnvGeo-Earthquake は、研究・教育向けに地震の震源カタログを探索するための
+インタラクティブ可視化プラットフォームです。
 
 [![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://streamlit.io/)
 [![Python](https://img.shields.io/badge/python-3.10--3.12-blue.svg)](https://www.python.org/)
@@ -9,11 +9,11 @@ EnvGeo-Earthquake は、研究・教育向けに地震の震源を可視化す�
 
 このアプリケーションは、**EnvGeo-Seawater**
 (https://envgeo.h.kyoto-u.ac.jp/sw_jpn/) の空間 3D/4D 可視化ワークフローを、
-地震カタログデータに応用して作成しました。もとの EnvGeo-Seawater プロジェクトは、
-海洋学・海洋地球化学データのインタラクティブな可視化を目的としていますが
-EnvGeo-Earthquake は、その教育的・探索的・出典を重視する方針を引き継いでいます。
+地震カタログデータに応用したものです。EnvGeo-Seawater は、海洋学・海洋地球化学
+データのインタラクティブな可視化を目的として開発されました。EnvGeo-Earthquake は、
+その探索的で、出典を明示する研究用ワークフローを震源カタログに展開しています。
 
-本アプリは、**簡易的な研究、授業、探索的可視化**を目的としています。
+本アプリは、**探索的データ解析**、授業、再現可能な研究ワークフローの支援を目的としています。
 公式の地震速報、津波警報、ハザード評価、防災対応システムではありません。
 
 ---
@@ -21,29 +21,40 @@ EnvGeo-Earthquake は、その教育的・探索的・出典を重視する方�
 ## 概要
 
 EnvGeo-Earthquake は、USGS Earthquake Catalog API から震源データを取得し、
-以下の形式で可視化します。
+EnvGeo 形式の 2D、3D、4D、断面表示ワークフローで可視化します。
 
 - マグニチュードに応じてマーカーサイズを変えた 2D マップ
 - 深さ、マグニチュード、カラーバー制御を備えた 3D/4D 震源プロット
 - 任意の A-B 断面図と断面位置マップ
 - 深度頻度プロファイル
 - 時系列ヒストグラム
-- Advancedページ内での、アップロードした JMA/NIED カタログ表との日本周辺向け比較
+- Advanced ページ内での、アップロードした JMA/NIED カタログ表との日本周辺向け比較
 - 利用可能な場合の USGS プレート境界オーバーレイ
 
+また、本プロジェクトは EnvGeo-Seawater のワークフローのうち、どの部分を地球科学データに
+共通する機能として整理できるかを検討するための実例でもあります。候補には、データ正規化、
+出典メタデータ、地図プリセット、ローカル km 座標変換、3D/4D レイアウト、断面図処理などが含まれます。
 
 ---
 
-## Main Pages
+## 主要ページ
 
-このアプリでは以下の Streamlit ページファイルを使用します。
+Streamlit アプリでは、`home.py` が概要、データ出典、使い方、更新履歴、README のタブを担当します。
+`pages/` ディレクトリには、英語版と日本語版の地震可視化ワークフローが含まれます。
 
-- `pages/54_4D_Visualizer_Earthquake.py`  
-  地震専用の基本的な USGS 震源可視化ページです。
+- `pages/54_🇺🇸_4D_Earthquake_Simple.py`  
+  英語版の基本的な USGS 震源可視化ページです。
 
-- `pages/55_4D_Visualizer_Earthquake_Advanced.py`  
-  プレート境界、2D/3D マップ、断面図、深度プロファイル、時系列ヒストグラム、
-  JMA/NIED 比較機能を含む発展版の地震可視化ページです。
+- `pages/55_🇺🇸_4D_Earthquake_Advanced.py`  
+  英語版の詳細ページです。プレート境界、2D/3D マップ、断面図、深度プロファイル、時系列ヒストグラム、
+  JMA/NIED 比較機能を含む詳細版の地震カタログ探索ページです。
+
+- `pages/56_🇯🇵_4D_Earthquake_シンプル版.py`  
+  日本語版の基本的な USGS 震源可視化ページです。
+
+- `pages/57_🇯🇵_4D_Earthquake_詳細版.py`  
+  日本語版の詳細ページです。プレート境界、2D/3D マップ、断面図、深度プロファイル、時系列ヒストグラム、
+  JMA/NIED 比較機能を含みます。
 
 ---
 
@@ -64,6 +75,24 @@ EnvGeo-Earthquake は、USGS Earthquake Catalog API から震源データを取�
 - 選択クエリが 20,000 イベントの API 上限に達した場合の警告
 - アプリ内での簡潔な出典・利用上の注意表示
 - 3D 表示は PC 推奨、スマートフォン・タブレットでは 2D 表示推奨
+
+---
+
+## EnvGeo-Seawater との関係
+
+EnvGeo-Earthquake は、構成、用語、可視化ワークフローを EnvGeo-Seawater に近い形で維持しています。
+現在は別アプリとして扱いますが、今後の整理では、次の要素を EnvGeo 共通コア候補として検討します。
+
+- 地球科学データの標準列名と単位の扱い
+- データソース、引用、出典メタデータの表示
+- 地図背景、地域プリセット、海岸線ヘルパー
+- 経度ラップとローカル km 座標変換
+- 3D/4D 図の共通レイアウト
+- 断面図と深度プロファイルの幾何処理
+- ユーザーアップロードデータの検証と比較表の正規化
+
+一方で、USGS カタログ取得、JMA/NIED 比較、震源用語、地震データ固有の注意事項は、
+他の EnvGeo アプリでも同じ構造が必要になるまでは Earthquake 側に残します。
 
 ---
 
@@ -258,7 +287,7 @@ http://localhost:8501
 6. 深さ構造を確認する場合は、PC で 3D/4D マップを使用します。
 7. 沈み込み帯や地域地震活動を解析する場合は、断面図と深度プロファイルを使用します。
 8. 時系列ヒストグラムで時系列の地震発生頻度を確認します。
-9. 日本周辺カタログを比較する場合は、手動で取得したカタログデータを Advancedページ内の JMA/NIED 比較機能にアップロードします。
+9. 日本周辺カタログを比較する場合は、手動で取得したカタログデータを Advanced ページ内の JMA/NIED 比較機能にアップロードします。
 
 ---
 
@@ -316,17 +345,23 @@ df.attrs["query_url"]
   USGS API 読み込み、GeoJSON 正規化、地図スタイル、海岸線読み込み、
   キャッシュ削除などを含む低レベル共通ユーティリティです。
 
-- `pages/54_4D_Visualizer_Earthquake.py`  
-  基本的な地震可視化ページです。
+- `pages/54_🇺🇸_4D_Earthquake_Simple.py`  
+  英語版の基本的な地震可視化ページです。
 
-- `pages/55_4D_Visualizer_Earthquake_Advanced.py`  
-  JMA/NIED 比較機能を含む発展版の地震可視化ページです。
+- `pages/55_🇺🇸_4D_Earthquake_Advanced.py`  
+  英語版の JMA/NIED 比較機能を含む詳細版の地震カタログ探索ページです。
+
+- `pages/56_🇯🇵_4D_Earthquake_シンプル版.py`  
+  日本語版の基本的な地震可視化ページです。
+
+- `pages/57_🇯🇵_4D_Earthquake_詳細版.py`  
+  日本語版の JMA/NIED 比較機能を含む詳細版の地震カタログ探索ページです。
 
 - `coastline/`  
   3D 参照オーバーレイ用のローカル海岸線座標ファイルです。
 
 - `test/`  
-  プロジェクトから継承された基本的なテストです。
+  ユーティリティの import、USGS GeoJSON 正規化、任意の継承データセット確認を行うローカルテストです。
 
 このプロジェクトは EnvGeo-Seawater から派生したため、レガシーな海水関連ディレクトリや
 ファイルがリポジトリに残っている場合があります。地震専用ページでは海洋化学データセットを
@@ -395,8 +430,8 @@ USGS 地震 API の実装は、公式 USGS ドキュメントと以下の入門�
 
 推奨アプリ引用:
 
-> Ishimura, T. (2026). EnvGeo-Earthquake: A simple research and education
-> earthquake visualization app based on EnvGeo-Seawater. Kyoto University.
+> Ishimura, T. (2026). EnvGeo-Earthquake: An interactive earthquake
+> hypocenter exploration app based on EnvGeo-Seawater. Kyoto University.
 
 必須または推奨されるデータ引用には、以下を含めてください。
 
