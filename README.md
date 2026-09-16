@@ -284,6 +284,11 @@ This project is designed for Python 3.10 to 3.12.
 pip install -r requirements.txt
 ```
 
+For local testing, install the development requirements:
+
+```bash
+pip install -r requirements-dev.txt
+```
 
 ---
 
@@ -388,9 +393,36 @@ df.attrs["query_url"]
   Local tests for utility imports, USGS GeoJSON normalization, and optional
   inherited dataset checks.
 
+- `requirements.txt`  
+  Runtime dependencies for the Streamlit app.
+
+- `requirements-dev.txt`  
+  Runtime dependencies plus local test tools.
+
+- `docs/`  
+  Project maintenance notes, including the work log, Japanese testing notes,
+  and release checklist.
+
+- `TODO.md`  
+  Current short-term tasks and shared-core candidates for future alignment
+  with EnvGeo-Seawater.
+
 Legacy seawater-related directories and files may remain in the repository
 because this project was adapted from EnvGeo-Seawater. The earthquake-specific
 pages do not require ocean chemistry datasets.
+
+---
+
+## Maintenance Notes
+
+README files, Home update history, and `docs/` are maintained together with
+code changes. Update them when user-facing behavior, page names, data sources,
+citations, limitations, testing workflow, or the EnvGeo-Seawater relationship
+changes.
+
+The usual workflow is to edit and verify the working folder first, then copy
+the checked source/docs/test files to the Git clone for commit and push. Do not
+copy generated caches, virtual environments, or local runtime artifacts.
 
 ---
 
@@ -488,3 +520,6 @@ the provider guidance for the specific dataset used.
 The application code is released under the MIT License. Data accessed from
 external services remain subject to the terms, policies, and attribution
 guidance of their original providers.
+
+See `NOTICE.md` for the separation between application-code licensing and
+external data/provider terms.

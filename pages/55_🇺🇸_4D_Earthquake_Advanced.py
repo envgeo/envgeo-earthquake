@@ -891,18 +891,15 @@ def main_region_selector():
         apply_cross_section_points_to_session(st.session_state.eq_region_choice)
 
     current_choice = st.session_state.eq_region_choice
-    if current_choice == JAPAN_REGION_LABEL:
-        st.session_state.eq_region_japan = True
-        st.session_state.eq_region_global = False
-        st.session_state.eq_region_hotspot = HOTSPOT_NONE_LABEL
-    elif current_choice == GLOBAL_REGION_LABEL:
-        st.session_state.eq_region_japan = False
-        st.session_state.eq_region_global = True
-        st.session_state.eq_region_hotspot = HOTSPOT_NONE_LABEL
-    elif current_choice in HOTSPOT_REGION_LABELS:
-        st.session_state.eq_region_japan = False
-        st.session_state.eq_region_global = False
-        st.session_state.eq_region_hotspot = current_choice
+    if current_choice not in REGION_BOUNDS:
+        current_choice = JAPAN_REGION_LABEL
+        st.session_state.eq_region_choice = JAPAN_REGION_LABEL
+
+    st.session_state.eq_region_japan = current_choice == JAPAN_REGION_LABEL
+    st.session_state.eq_region_global = current_choice == GLOBAL_REGION_LABEL
+    st.session_state.eq_region_hotspot = (
+        current_choice if current_choice in HOTSPOT_REGION_LABELS else HOTSPOT_NONE_LABEL
+    )
 
     st.subheader("Region")
     col_japan, col_global = st.columns(2)
@@ -928,7 +925,6 @@ def main_region_selector():
 
     hotspot_choice = st.session_state.get("eq_region_hotspot", HOTSPOT_NONE_LABEL)
     if hotspot_choice in HOTSPOT_REGION_LABELS:
-        st.caption(f"Selected hotspot: {hotspot_choice}")
         st.session_state.eq_region_choice = hotspot_choice
         return hotspot_choice
 

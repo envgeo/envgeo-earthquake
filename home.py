@@ -376,6 +376,8 @@ Core concepts:
   - **Improved:** README page names now match the current English/Japanese Streamlit pages.
   - **Improved:** Local tests now focus on Earthquake behavior and skip inherited Seawater dataset checks when those files are not bundled.
   - **Improved:** README and Home text now describe the long-term relationship with EnvGeo-Seawater and future shared-core candidates.
+  - **Added:** Project maintenance docs, including a work log, testing notes, release checklist, and README update policy.
+  - **Improved:** Repository metadata now separates runtime/test requirements and clarifies external data notices.
 
 - `0.2.4` (2026-05-19)
   - **Changed:** Cross-section longitude input range expanded to `-360 to 360`.

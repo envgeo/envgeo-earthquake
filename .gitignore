@@ -1,0 +1,57 @@
+# Python generated files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Local OS/editor files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.vscode/
+.idea/
+
+# Local environment and secrets
+.env
+.envrc
+.venv/
+.venv*/
+env/
+venv/
+ENV/
+.streamlit/secrets.toml
+
+# Test/cache outputs
+.pytest_cache/
+.tox/
+.nox/
+.coverage
+.coverage.*
+htmlcov/
+.cache/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+
+# Build/package outputs
+build/
+dist/
+downloads/
+eggs/
+.eggs/
+sdist/
+wheels/
+*.egg-info/
+*.egg
+MANIFEST
+
+# Jupyter/IPython local files
+.ipynb_checkpoints/
+profile_default/
+ipython_config.py
+
+# Local logs and runtime artifacts
+*.log
+*.tmp
+*.temp
