@@ -17,6 +17,8 @@ The app is intended to support **exploratory data analysis**, teaching, and
 reproducible research workflows. It is not an official earthquake alert,
 tsunami warning, hazard assessment, or disaster-response system.
 
+Illustrated user manuals: [English](docs/manual/README.md) | [Japanese](docs/manual_Japanese/README.md)
+
 ---
 
 ## Overview

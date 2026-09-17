@@ -13,6 +13,30 @@ This folder keeps project notes that are more detailed than the public README.
 - `release_checklist.md`  
   Manual checklist before copying changes to the Git clone, committing, tagging, or publishing.
 
+- `manual_Japanese/`
+  Japanese user manual for EnvGeo-Earthquake, including quick start, USGS query settings,
+  simple/advanced visualizer usage, JMA/NIED comparison, export, and use notes.
+
+- `manual/`
+  English user manual with the same workflow, illustrated with English UI screenshots.
+
+- `assets/screenshots/`
+  Japanese and English screenshots used by both manuals.
+
+- `capture_manual_screenshots.mjs`
+  Playwright script for regenerating the manual screenshots from a running local app.
+
+## Regenerating Manual Screenshots
+
+Start the app, then run the capture script in an environment with Playwright and Chromium installed:
+
+```bash
+streamlit run home.py
+APP_URL=http://127.0.0.1:8501 node docs/capture_manual_screenshots.mjs
+```
+
+Set `CHROME_PATH` when Playwright should use an existing Chrome executable instead of its bundled Chromium.
+
 ## Maintenance Policy
 
 Update these documents together with code and README changes. In particular:

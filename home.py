@@ -337,14 +337,19 @@ Core concepts:
         st.header("Manual")
         st.markdown(
             """
+Illustrated manuals are available in this repository:
+
+- English: `docs/manual/README.md`
+- Japanese: `docs/manual_Japanese/README.md`
+
 1. Open `4D Visualizer Earthquake Advanced`.
 2. Choose `Japan and surrounding area` or `Global` on the main page.
 3. Set API filters in the sidebar: date/time, magnitude, hypocenter depth, latitude/longitude, order, and maximum events.
 4. Select the colorbar variable: magnitude or hypocenter depth.
 5. Use the 2D map for overview and mobile/tablet viewing.
 6. Use the 3D/4D map on a PC for depth structure and subduction-zone geometry.
-7. Use `Cross-section / depth` to define an A-B section, inspect the depth distribution, and see the section line on the map.
-8. Use `Time histogram` to inspect temporal clustering.
+7. Use `Cross-section` to define an A-B section, inspect the depth distribution, and see the section line on the map.
+8. Use `Time Histogram` to inspect temporal clustering.
 9. In `4D Visualizer Earthquake Advanced`, use the JMA/NIED comparison tools to upload a compatible catalog table and compare it with the current USGS query.
             """
         )
