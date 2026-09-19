@@ -437,6 +437,12 @@ def sidebar_controls(region_preset):
     default_start_date = default_end_date - timedelta(days=30)
 
     default_lon_min, default_lon_max, default_lat_min, default_lat_max = REGION_BOUNDS[region_preset]
+    lon_range_key = f"eq_lon_range_{region_preset}"
+    lat_range_key = f"eq_lat_range_{region_preset}"
+    if lon_range_key not in st.session_state:
+        st.session_state[lon_range_key] = (float(default_lon_min), float(default_lon_max))
+    if lat_range_key not in st.session_state:
+        st.session_state[lat_range_key] = (float(default_lat_min), float(default_lat_max))
 
     with st.sidebar.form("earthquake_api_parameter", clear_on_submit=False):
         st.header(":blue[--- USGS Earthquake API ---]")
@@ -487,17 +493,15 @@ def sidebar_controls(region_preset):
                 "Longitude",
                 min_value=-180.0,
                 max_value=360.0,
-                value=(default_lon_min, default_lon_max),
                 step=0.5,
-                key=f"eq_lon_range_{region_preset}",
+                key=lon_range_key,
             )
             lat_min, lat_max = st.slider(
                 "Latitude",
                 min_value=-90.0,
                 max_value=90.0,
-                value=(default_lat_min, default_lat_max),
                 step=0.5,
-                key=f"eq_lat_range_{region_preset}",
+                key=lat_range_key,
             )
 
         orderby = st.selectbox(

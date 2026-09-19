@@ -380,6 +380,7 @@ Illustrated manuals are available in this repository:
 - `0.3.1` (Unreleased, updated 2026-09-19)
   - **Improved:** Added compatibility handling for Python 3.10-3.12 and Streamlit 1.42-1.63 migration testing.
   - **Changed:** Updated the runtime requirement to allow Streamlit 1.42-1.63 while retaining Plotly 5.24 as the verified baseline.
+  - **Fixed:** Removed duplicate default/session-state assignment for Region longitude and latitude sliders on Streamlit 1.63.
   - **Planned:** Keep Plotly 5.24 as the current baseline while preparing a staged MapLibre migration for Plotly 7.
 
 - `0.3.0` (2026-09-17)
