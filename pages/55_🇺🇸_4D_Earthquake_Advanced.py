@@ -23,6 +23,7 @@ import envgeo_utils
 
 
 version = "0.3.1"  # 2026-09-19
+PAGE_STATE_PREFIX = "eq_en_advanced"
 
 st.set_page_config(
     page_title="EnvGeo-Earthquake",
@@ -801,8 +802,25 @@ def apply_region_bounds_to_session(region_label):
     if region_label not in REGION_BOUNDS:
         return
     lon_min, lon_max, lat_min, lat_max = REGION_BOUNDS[region_label]
-    st.session_state[f"eq_lon_range_{region_label}"] = (float(lon_min), float(lon_max))
-    st.session_state[f"eq_lat_range_{region_label}"] = (float(lat_min), float(lat_max))
+    st.session_state[f"{PAGE_STATE_PREFIX}_lon_range_{region_label}"] = (
+        float(lon_min), float(lon_max)
+    )
+    st.session_state[f"{PAGE_STATE_PREFIX}_lat_range_{region_label}"] = (
+        float(lat_min), float(lat_max)
+    )
+
+
+def valid_slider_range(value, minimum, maximum, max_span=None):
+    """Return True when a two-value slider state is finite and usable."""
+    try:
+        lower, upper = (float(item) for item in value)
+    except (TypeError, ValueError):
+        return False
+    if not (math.isfinite(lower) and math.isfinite(upper)):
+        return False
+    if lower < minimum or upper > maximum or lower >= upper:
+        return False
+    return max_span is None or (upper - lower) <= max_span
 
 
 def set_region_japan():
@@ -943,21 +961,23 @@ def sidebar_controls(region_preset):
     default_start_date = default_end_date - timedelta(days=30)
 
     default_lon_min, default_lon_max, default_lat_min, default_lat_max = REGION_BOUNDS[region_preset]
-    lon_range_key = f"eq_lon_range_{region_preset}"
-    lat_range_key = f"eq_lat_range_{region_preset}"
-    if lon_range_key not in st.session_state:
+    lon_range_key = f"{PAGE_STATE_PREFIX}_lon_range_{region_preset}"
+    lat_range_key = f"{PAGE_STATE_PREFIX}_lat_range_{region_preset}"
+    if not valid_slider_range(
+        st.session_state.get(lon_range_key), -180.0, 360.0, max_span=360.0
+    ):
         st.session_state[lon_range_key] = (float(default_lon_min), float(default_lon_max))
-    if lat_range_key not in st.session_state:
+    if not valid_slider_range(st.session_state.get(lat_range_key), -90.0, 90.0):
         st.session_state[lat_range_key] = (float(default_lat_min), float(default_lat_max))
 
-    with st.sidebar.form("earthquake_api_parameter", clear_on_submit=False):
+    with st.sidebar.form(f"{PAGE_STATE_PREFIX}_api_parameter", clear_on_submit=False):
         st.header(":blue[--- USGS Earthquake API ---]")
         date_range = st.date_input(
             "Date range (UTC)",
             value=(default_start_date, default_end_date),
             min_value=min_selectable_date,
             max_value=default_end_date,
-            key="eq_date_range",
+            key=f"{PAGE_STATE_PREFIX}_date_range",
         )
 
         col_start, col_end = st.columns(2)
@@ -966,14 +986,14 @@ def sidebar_controls(region_preset):
                 "Start time",
                 value=time(0, 0),
                 step=3600,
-                key="eq_start_clock",
+                key=f"{PAGE_STATE_PREFIX}_start_clock",
             )
         with col_end:
             end_clock = st.time_input(
                 "End time",
                 value=time(23, 59),
                 step=3600,
-                key="eq_end_clock",
+                key=f"{PAGE_STATE_PREFIX}_end_clock",
             )
 
         mag_min, mag_max = st.slider(
@@ -982,7 +1002,7 @@ def sidebar_controls(region_preset):
             max_value=10.0,
             value=(4.5, 10.0),
             step=0.1,
-            key="eq_magnitude_range",
+            key=f"{PAGE_STATE_PREFIX}_magnitude_range",
         )
 
         depth_min, depth_max = st.slider(
@@ -991,7 +1011,7 @@ def sidebar_controls(region_preset):
             max_value=1000.0,
             value=(0.0, 700.0),
             step=10.0,
-            key="eq_depth_range",
+            key=f"{PAGE_STATE_PREFIX}_depth_range",
         )
 
         with st.expander("Latitude / Longitude", expanded=True):
@@ -1014,7 +1034,7 @@ def sidebar_controls(region_preset):
             "Order by",
             ["time", "time-asc", "magnitude", "magnitude-asc"],
             index=0,
-            key="eq_orderby",
+            key=f"{PAGE_STATE_PREFIX}_orderby",
             help=(
                 "**Select data priority / データの優先順位を選択:**\n\n"
                 "- **time**: Newest first / 新しい順 (Default)\n"
@@ -1034,7 +1054,7 @@ def sidebar_controls(region_preset):
             max_value=20000,
             value=2000,
             step=100,
-            key="eq_limit",
+            key=f"{PAGE_STATE_PREFIX}_limit",
         )
 
         st.form_submit_button(":red[Fetch / update]")
