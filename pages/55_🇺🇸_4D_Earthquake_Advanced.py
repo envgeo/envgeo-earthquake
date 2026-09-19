@@ -22,7 +22,7 @@ import streamlit as st
 import envgeo_utils
 
 
-version = "0.2.5" #2026/09/16
+version = "0.3.1"  # 2026-09-19
 
 st.set_page_config(
     page_title="EnvGeo-Earthquake",
@@ -1492,7 +1492,7 @@ def render_4d_hypocenter_map(df_plot, query, viz, plate_boundary_df=None):
         fig_eq,
         key="earthquake_4d_hypocenter_map",
         config={"scrollZoom": True, "displayModeBar": True},
-        use_container_width=True,
+        **envgeo_utils.stretch_width_kwargs(st.plotly_chart),
     )
     render_colorbar_scale_adjustment(viz, "3d")
 
@@ -1616,7 +1616,7 @@ def render_2d_distribution_map(df_plot, query, viz, plate_boundary_df=None):
         fig_map,
         key="earthquake_distribution_map",
         config={"scrollZoom": True, "displayModeBar": True},
-        use_container_width=True,
+        **envgeo_utils.stretch_width_kwargs(st.plotly_chart),
     )
     render_colorbar_scale_adjustment(viz, "2d")
 
@@ -1652,7 +1652,11 @@ def render_time_histogram(df_plot):
         yaxis_title="Number of earthquakes",
         margin=dict(l=10, r=10, t=20, b=20),
     )
-    st.plotly_chart(fig_time, key="earthquake_time_histogram", use_container_width=True)
+    st.plotly_chart(
+        fig_time,
+        key="earthquake_time_histogram",
+        **envgeo_utils.stretch_width_kwargs(st.plotly_chart),
+    )
 
 
 def render_cross_section_location_map(
@@ -1824,7 +1828,7 @@ def render_cross_section_location_map(
         fig_location,
         key="earthquake_cross_section_location_map",
         config={"scrollZoom": True, "displayModeBar": True},
-        use_container_width=True,
+        **envgeo_utils.stretch_width_kwargs(st.plotly_chart),
     )
 
 
@@ -1948,7 +1952,7 @@ def render_cross_section_and_depth_profile(df_plot, query, viz, plate_boundary_d
             st.plotly_chart(
                 fig_section,
                 key="earthquake_cross_section",
-                use_container_width=True,
+                **envgeo_utils.stretch_width_kwargs(st.plotly_chart),
             )
         render_cross_section_location_map(
             df_plot,
@@ -2005,7 +2009,11 @@ def render_cross_section_and_depth_profile(df_plot, query, viz, plate_boundary_d
         yaxis=dict(range=[viz["fig_depth_max"], viz["fig_depth_min"]]),
         margin=dict(l=10, r=10, t=20, b=20),
     )
-    st.plotly_chart(fig_depth, key="earthquake_depth_profile", use_container_width=True)
+    st.plotly_chart(
+        fig_depth,
+        key="earthquake_depth_profile",
+        **envgeo_utils.stretch_width_kwargs(st.plotly_chart),
+    )
     render_colorbar_scale_adjustment(viz, "section")
 
 
@@ -2265,7 +2273,7 @@ def render_jma_nied_comparison_page(df_plot, query, plate_boundary_df=None):
         fig_compare,
         key="earthquake_jma_nied_compare_map",
         config={"scrollZoom": True, "displayModeBar": True},
-        use_container_width=True,
+        **envgeo_utils.stretch_width_kwargs(st.plotly_chart),
     )
 
     fig_depth_compare = px.histogram(
@@ -2297,7 +2305,7 @@ def render_jma_nied_comparison_page(df_plot, query, plate_boundary_df=None):
     st.plotly_chart(
         fig_depth_compare,
         key="earthquake_jma_nied_depth_compare",
-        use_container_width=True,
+        **envgeo_utils.stretch_width_kwargs(st.plotly_chart),
     )
 
 

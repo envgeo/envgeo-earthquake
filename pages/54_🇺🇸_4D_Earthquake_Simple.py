@@ -18,7 +18,7 @@ import streamlit as st
 import envgeo_utils
 
 
-version = "0.2.5" #2026/09/16
+version = "0.3.1"  # 2026-09-19
 
 
 st.set_page_config(

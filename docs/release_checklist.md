@@ -1,12 +1,10 @@
-# Release / Git Copy Checklist
+# Release Checklist
 
-Use this checklist before copying changes from the working folder to the Git clone or before committing.
+Use this checklist before committing, tagging, or publishing a release.
 
-## Working Folder
+## Documentation And Metadata
 
-- [ ] Work in `/Users/toyoho/Documents/study/704-Python/Webアプリ_main134_20230513/Streamlit_EnvGeo2/earthquake_map_v030`.
 - [ ] Update `README.md` and `README_Japanese.md` when user-facing behavior, page names, sources, limitations, or EnvGeo-Seawater relationship changes.
-- [ ] Update `docs/work_log.md` for meaningful changes.
 - [ ] Update `docs/testing_Japanese.md` when tests change.
 - [ ] Update Home update history when the change should be visible in the app.
 - [ ] Update `requirements.txt`, `requirements-dev.txt`, `.gitignore`, `LICENSE`, or `NOTICE.md` when dependencies, ignored artifacts, or licensing notes change.
@@ -27,21 +25,16 @@ python -c "import ast, pathlib; files=[pathlib.Path('home.py'), pathlib.Path('en
 
 - [ ] For UI changes, run Streamlit locally and check the affected page manually.
 
-## Copy To Git Clone
+## Files To Exclude
 
-Git clone path:
-
-```text
-/Users/toyoho/Documents/GitHub/envgeo-earthquake
-```
-
-Copy only source/docs/test files. Do not copy:
+Do not commit:
 
 - `.DS_Store`
 - `__pycache__/`
 - `.pytest_cache/`
 - local secrets
-- old local scratch folders unless intentionally publishing them
+- local development notes
+- scratch or archive folders unless intentionally publishing them
 
 ## Before Commit
 

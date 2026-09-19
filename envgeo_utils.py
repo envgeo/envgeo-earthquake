@@ -7,13 +7,15 @@ Created on Sat Apr 22 17:15:03 2023
 """
 
 # --- App version / バージョン情報 ---
-# version = "1.0.0a_stable_20260324" #2026/03/24
-version = "1.0.4e_Earthquake_20260501" #2026/05/01
+APP_VERSION = "0.3.1"
+APP_VERSION_DATE = "2026-09-19"
+version = APP_VERSION
 
 
 import pandas as pd
 import streamlit as st
 import numpy as np
+import inspect
 import math
 import json
 from datetime import date, datetime
@@ -34,7 +36,33 @@ warnings.filterwarnings("ignore", message="invalid value encountered in") # メ�
 ##############################################################################
 """
 
-pd.options.mode.copy_on_write = True
+def _major_version(version_text):
+    """Return the leading numeric component of a package version."""
+    try:
+        return int(str(version_text).split(".", maxsplit=1)[0])
+    except (TypeError, ValueError):
+        return 0
+
+
+def configure_pandas_compatibility():
+    """Enable optional Pandas 2 behavior without warning on Pandas 3."""
+    if _major_version(pd.__version__) < 3:
+        pd.options.mode.copy_on_write = True
+
+
+def stretch_width_kwargs(widget):
+    """Return full-width arguments compatible with old and new Streamlit APIs."""
+    width_parameter = inspect.signature(widget).parameters.get("width")
+    supports_stretch = width_parameter is not None and (
+        "Width" in str(width_parameter.annotation)
+        or width_parameter.default in {"stretch", "content"}
+    )
+    if supports_stretch:
+        return {"width": "stretch"}
+    return {"use_container_width": True}
+
+
+configure_pandas_compatibility()
 
 
 

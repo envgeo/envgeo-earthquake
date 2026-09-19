@@ -14,7 +14,7 @@ import streamlit as st
 
 
 BASE_DIR = Path(__file__).resolve().parent
-APP_VERSION = "0.2.5"
+APP_VERSION = "0.3.1"
 
 URLS = {
     "lab": "https://envgeo.h.kyoto-u.ac.jp/simple-earthquake-hypocenter-visualization/",
@@ -377,6 +377,15 @@ Illustrated manuals are available in this repository:
         st.header("Update History")
         st.markdown(
             """
+- `0.3.1` (Unreleased, updated 2026-09-19)
+  - **Improved:** Added compatibility handling for Python 3.10-3.12 and Streamlit 1.42-1.63 migration testing.
+  - **Changed:** Updated the runtime requirement to allow Streamlit 1.42-1.63 while retaining Plotly 5.24 as the verified baseline.
+  - **Planned:** Keep Plotly 5.24 as the current baseline while preparing a staged MapLibre migration for Plotly 7.
+
+- `0.3.0` (2026-09-17)
+  - **Changed:** App and page version labels are now consistently displayed as `0.3.0`.
+  - **Planned:** English/Japanese and Simple/Advanced pages remain separate while shared, testable helpers are extracted gradually.
+
 - `0.2.5` (2026-09-16)
   - **Improved:** README page names now match the current English/Japanese Streamlit pages.
   - **Improved:** Local tests now focus on Earthquake behavior and skip inherited Seawater dataset checks when those files are not bundled.
