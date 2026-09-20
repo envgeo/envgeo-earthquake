@@ -1,4 +1,4 @@
-# Simple 4D Visualizer
+# Simple 4D Visualizer Earthquake
 
 The Simple visualizer retrieves a USGS catalog and shows its distribution in 3D/4D and 2D maps.
 
