@@ -1279,12 +1279,11 @@ def _resolve_color_range(viz, view_name):
 
 
 def render_colorbar_scale_adjustment(viz, view_name):
-    color_range, key = _resolve_color_range(viz, view_name)
+    _, key = _resolve_color_range(viz, view_name)
     return st.slider(
         f"カラーバースケール調整: {viz['color_label']}",
         min_value=float(viz["color_range_min"]),
         max_value=float(viz["color_range_max"]),
-        value=color_range,
         step=float(viz["color_range_step"]),
         key=key,
     )
