@@ -19,7 +19,6 @@ import envgeo_utils
 
 
 version = "0.3.1"  # 2026-09-19
-PAGE_STATE_PREFIX = "eq_en_simple"
 
 
 st.set_page_config(
@@ -309,25 +308,8 @@ def apply_region_bounds_to_session(region_label):
     if region_label not in REGION_BOUNDS:
         return
     lon_min, lon_max, lat_min, lat_max = REGION_BOUNDS[region_label]
-    st.session_state[f"{PAGE_STATE_PREFIX}_lon_range_{region_label}"] = (
-        float(lon_min), float(lon_max)
-    )
-    st.session_state[f"{PAGE_STATE_PREFIX}_lat_range_{region_label}"] = (
-        float(lat_min), float(lat_max)
-    )
-
-
-def valid_slider_range(value, minimum, maximum, max_span=None):
-    """Return True when a two-value slider state is finite and usable."""
-    try:
-        lower, upper = (float(item) for item in value)
-    except (TypeError, ValueError):
-        return False
-    if not (math.isfinite(lower) and math.isfinite(upper)):
-        return False
-    if lower < minimum or upper > maximum or lower >= upper:
-        return False
-    return max_span is None or (upper - lower) <= max_span
+    st.session_state[f"eq_lon_range_{region_label}"] = (float(lon_min), float(lon_max))
+    st.session_state[f"eq_lat_range_{region_label}"] = (float(lat_min), float(lat_max))
 
 
 def set_region_japan():
@@ -455,27 +437,20 @@ def sidebar_controls(region_preset):
     default_start_date = default_end_date - timedelta(days=30)
 
     default_lon_min, default_lon_max, default_lat_min, default_lat_max = REGION_BOUNDS[region_preset]
-    lon_range_key = f"{PAGE_STATE_PREFIX}_lon_range_{region_preset}"
-    lat_range_key = f"{PAGE_STATE_PREFIX}_lat_range_{region_preset}"
-    if not valid_slider_range(
-        st.session_state.get(lon_range_key), -180.0, 360.0, max_span=360.0
-    ):
-        st.session_state[lon_range_key] = (float(default_lon_min), float(default_lon_max))
-    if not valid_slider_range(st.session_state.get(lat_range_key), -90.0, 90.0):
-        st.session_state[lat_range_key] = (float(default_lat_min), float(default_lat_max))
 
-    with st.sidebar.form(f"{PAGE_STATE_PREFIX}_api_parameter", clear_on_submit=False):
-        st.header(":blue[--- USGS Earthquake API ---]")
+    with st.sidebar.form("earthquake_api_parameter", clear_on_submit=False):
+        st.header(":blue[USGS Earthquake API]")
         st.caption(
             ":red[Change API search conditions, then click **Fetch / update** "
             "to retrieve the data.]"
         )
+        st.form_submit_button(":red[Fetch / update]", use_container_width=True)
         date_range = st.date_input(
             "Date range (UTC)",
             value=(default_start_date, default_end_date),
             min_value=min_selectable_date,
             max_value=default_end_date,
-            key=f"{PAGE_STATE_PREFIX}_date_range",
+            key="eq_date_range",
         )
 
         col_start, col_end = st.columns(2)
@@ -484,14 +459,14 @@ def sidebar_controls(region_preset):
                 "Start time",
                 value=time(0, 0),
                 step=3600,
-                key=f"{PAGE_STATE_PREFIX}_start_clock",
+                key="eq_start_clock",
             )
         with col_end:
             end_clock = st.time_input(
                 "End time",
                 value=time(23, 59),
                 step=3600,
-                key=f"{PAGE_STATE_PREFIX}_end_clock",
+                key="eq_end_clock",
             )
 
         mag_min, mag_max = st.slider(
@@ -500,7 +475,7 @@ def sidebar_controls(region_preset):
             max_value=10.0,
             value=(4.5, 10.0),
             step=0.1,
-            key=f"{PAGE_STATE_PREFIX}_magnitude_range",
+            key="eq_magnitude_range",
         )
 
         depth_min, depth_max = st.slider(
@@ -509,8 +484,15 @@ def sidebar_controls(region_preset):
             max_value=1000.0,
             value=(0.0, 700.0),
             step=10.0,
-            key=f"{PAGE_STATE_PREFIX}_depth_range",
+            key="eq_depth_range",
         )
+
+        lon_range_key = f"eq_lon_range_{region_preset}"
+        lat_range_key = f"eq_lat_range_{region_preset}"
+        if lon_range_key not in st.session_state:
+            st.session_state[lon_range_key] = (float(default_lon_min), float(default_lon_max))
+        if lat_range_key not in st.session_state:
+            st.session_state[lat_range_key] = (float(default_lat_min), float(default_lat_max))
 
         with st.expander("Latitude / Longitude", expanded=True):
             lon_min, lon_max = st.slider(
@@ -532,7 +514,7 @@ def sidebar_controls(region_preset):
             "Order by",
             ["time", "time-asc", "magnitude", "magnitude-asc"],
             index=0,
-            key=f"{PAGE_STATE_PREFIX}_orderby",
+            key="eq_orderby",
             help=(
                 "**Select data priority / データの優先順位を選択:**\n\n"
                 "- **time**: Newest first / 新しい順 (Default)\n"
@@ -552,10 +534,10 @@ def sidebar_controls(region_preset):
             max_value=20000,
             value=2000,
             step=100,
-            key=f"{PAGE_STATE_PREFIX}_limit",
+            key="eq_limit",
         )
 
-        st.form_submit_button(":red[Fetch / update]")
+        st.form_submit_button(":red[Fetch / update!]", use_container_width=True)
 
     start_dt, end_dt = build_datetime_range(date_range, start_clock, end_clock)
     if start_dt is None or end_dt is None:
@@ -635,8 +617,7 @@ def visualization_controls(df_plot, query):
     Sidebar and main-panel controls for 4D rendering.
     """
     with st.sidebar.container(border=True):
-        st.subheader(":blue[--- Visualization ---]")
-        st.caption(":blue[Changes in this section are applied automatically.]")
+        st.subheader(":blue[Visualization]")
 
         depth_min_actual, depth_max_actual = expanded_float_bounds(
             df_plot["Depth_km"], query["depth_min"], query["depth_max"], pad=10.0
@@ -988,9 +969,8 @@ def display_earthquake_table(df_eq):
 
 def main():
     st.title(f"EnvGeo-Earthquake")
-    st.header(f"4D Visualizer Earthquake ({version})")
+    st.header(f"4D Visualizer Earthquake Simple ({version})")
     st.caption("Source: USGS Earthquake Catalog. Data may be preliminary and updated.")
-    st.caption("震源データ: USGS Earthquake Catalog。速報値を含み、更新される場合があります。")
 
     with st.expander("Data use note / データ利用上の注意", expanded=False):
         st.write(

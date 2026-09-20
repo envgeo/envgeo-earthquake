@@ -972,11 +972,12 @@ def sidebar_controls(region_preset):
         st.session_state[lat_range_key] = (float(default_lat_min), float(default_lat_max))
 
     with st.sidebar.form(f"{PAGE_STATE_PREFIX}_api_parameter", clear_on_submit=False):
-        st.header(":blue[--- USGS Earthquake API ---]")
+        st.header(":blue[USGS Earthquake API]")
         st.caption(
             ":red[Change API search conditions, then click **Fetch / update** "
             "to retrieve the data.]"
         )
+        st.form_submit_button(":red[Fetch / update]", use_container_width=True)
         date_range = st.date_input(
             "Date range (UTC)",
             value=(default_start_date, default_end_date),
@@ -1062,7 +1063,7 @@ def sidebar_controls(region_preset):
             key=f"{PAGE_STATE_PREFIX}_limit",
         )
 
-        st.form_submit_button(":red[Fetch / update]")
+        st.form_submit_button(":red[Fetch / update!]", use_container_width=True)
 
     start_dt, end_dt = build_datetime_range(date_range, start_clock, end_clock)
     if start_dt is None or end_dt is None:
@@ -1142,7 +1143,7 @@ def visualization_controls(df_plot, query):
     Sidebar and main-panel controls for 4D rendering.
     """
     with st.sidebar.container(border=True):
-        st.subheader(":blue[--- Visualization ---]")
+        st.subheader(":blue[Visualization]")
         st.caption(":blue[Changes in this section are applied automatically.]")
 
         depth_min_actual, depth_max_actual = expanded_float_bounds(
@@ -1866,9 +1867,20 @@ def render_cross_section_and_depth_profile(df_plot, query, viz, plate_boundary_d
     Render an arbitrary cross-section and a depth-frequency profile.
     """
     color_range, _ = _resolve_color_range(viz, "section")
-    st.subheader("Arbitrary Cross-section")
+    st.subheader("User-defined Cross-section")
     default_start_lon, default_start_lat, default_end_lon, default_end_lat = default_cross_section_points(query)
     section_plot_container = st.container()
+
+    if "eq_section_start_lon" not in st.session_state:
+        st.session_state["eq_section_start_lon"] = float(default_start_lon)
+    if "eq_section_start_lat" not in st.session_state:
+        st.session_state["eq_section_start_lat"] = float(default_start_lat)
+    if "eq_section_end_lon" not in st.session_state:
+        st.session_state["eq_section_end_lon"] = float(default_end_lon)
+    if "eq_section_end_lat" not in st.session_state:
+        st.session_state["eq_section_end_lat"] = float(default_end_lat)
+    if "eq_section_half_width" not in st.session_state:
+        st.session_state["eq_section_half_width"] = 300.0
 
     with st.container(border=True):
         col_start_lon, col_start_lat, col_end_lon, col_end_lat = st.columns(4)
@@ -1877,7 +1889,6 @@ def render_cross_section_and_depth_profile(df_plot, query, viz, plate_boundary_d
                 "Start lon",
                 min_value=-360.0,
                 max_value=360.0,
-                value=float(default_start_lon),
                 step=0.5,
                 key="eq_section_start_lon",
             )
@@ -1886,7 +1897,6 @@ def render_cross_section_and_depth_profile(df_plot, query, viz, plate_boundary_d
                 "Start lat",
                 min_value=-90.0,
                 max_value=90.0,
-                value=float(default_start_lat),
                 step=0.5,
                 key="eq_section_start_lat",
             )
@@ -1895,7 +1905,6 @@ def render_cross_section_and_depth_profile(df_plot, query, viz, plate_boundary_d
                 "End lon",
                 min_value=-360.0,
                 max_value=360.0,
-                value=float(default_end_lon),
                 step=0.5,
                 key="eq_section_end_lon",
             )
@@ -1904,7 +1913,6 @@ def render_cross_section_and_depth_profile(df_plot, query, viz, plate_boundary_d
                 "End lat",
                 min_value=-90.0,
                 max_value=90.0,
-                value=float(default_end_lat),
                 step=0.5,
                 key="eq_section_end_lat",
             )
@@ -1913,7 +1921,6 @@ def render_cross_section_and_depth_profile(df_plot, query, viz, plate_boundary_d
             "Section half-width (km)",
             min_value=10.0,
             max_value=1000.0,
-            value=300.0,
             step=10.0,
             key="eq_section_half_width",
         )
@@ -2372,7 +2379,6 @@ def main():
     st.title(f"EnvGeo-Earthquake")
     st.header(f"4D Visualizer Earthquake Advanced ({version})")
     st.caption("Source: USGS Earthquake Catalog. Data may be preliminary and updated.")
-    st.caption("震源データ: USGS Earthquake Catalog。速報値を含み、更新される場合があります。")
 
 
     with st.expander("Data use note / データ利用上の注意", expanded=False):

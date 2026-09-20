@@ -463,10 +463,11 @@ def sidebar_controls(region_preset):
         st.session_state[lat_range_key] = (float(default_lat_min), float(default_lat_max))
 
     with st.sidebar.form(f"{PAGE_STATE_PREFIX}_api_parameter", clear_on_submit=False):
-        st.header(":blue[--- USGS 地震カタログ API ---]")
+        st.header(":blue[USGS 地震カタログ API]")
         st.caption(
             ":red[検索条件を変更した後、**取得 / 更新**を押してデータを取得してください。]"
         )
+        st.form_submit_button(":red[取得 / 更新]", use_container_width=True)
         date_range = st.date_input(
             "期間（UTC）",
             value=(default_start_date, default_end_date),
@@ -551,7 +552,7 @@ def sidebar_controls(region_preset):
             key=f"{PAGE_STATE_PREFIX}_limit",
         )
 
-        st.form_submit_button(":red[取得 / 更新]")
+        st.form_submit_button(":red[取得 / 更新！]", use_container_width=True)
 
     start_dt, end_dt = build_datetime_range(date_range, start_clock, end_clock)
     if start_dt is None or end_dt is None:
@@ -631,7 +632,7 @@ def visualization_controls(df_plot, query):
     Sidebar and main-panel controls for 4D rendering.
     """
     with st.sidebar.container(border=True):
-        st.subheader(":blue[--- 可視化設定 ---]")
+        st.subheader(":blue[可視化設定]")
         st.caption(":blue[このセクションの変更は自動的に反映されます。]")
 
         depth_min_actual, depth_max_actual = expanded_float_bounds(
@@ -990,7 +991,7 @@ def display_earthquake_table(df_eq):
 
 def main():
     st.title(f"EnvGeo-Earthquake")
-    st.header(f"4D Visualizer Earthquake 基本版（{version}）")
+    st.header(f"4D Visualizer Earthquake 簡易版（{version}）")
     st.caption("データソース: USGS Earthquake Catalog（速報値を含み、後日更新される場合があります）。")
 
     with st.expander("データ利用上の注意", expanded=False):

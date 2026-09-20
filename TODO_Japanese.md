@@ -17,9 +17,18 @@
 
 - [ ] Plotly 5.24を検証済み基準として、Python 3.10-3.12 / Streamlit 1.42-1.63互換の0.3.1を完成・公開する。
   - [x] `requirements.txt`でStreamlit 1.42-1.63を許容し、新規デプロイでは1.63が選択される設定へ更新する。
+  - [x] Streamlit 1.63の Session State / `value=` 二重指定警告を断面図入力（page 55・57）で解消: ウィジェット直前でSession Stateを初期化し、`value=` 引数を削除。
+  - [x] Advancedページ（page 55・57）にフォーム上部の取得ボタンを追加（seawaterパターンに準拠）: キャプション直下に上部ボタン（ラベルに `!` なし）、フォーム末尾に下部ボタン（ラベルに `!` / `！` あり）、両ボタンとも `use_container_width=True`。
+  - [x] Simpleページ（page 54・56）にも同じ上下ボタン構成を適用。page 54 にはキャプションが未設置だったためヘッダー直下に追加。全4ページ統一。
 - [ ] MapboxトレースをPlotly 5.24で利用できるMapLibre APIへ移行し、同じ実装をPlotly 6.7および7.1でも確認する。
 - [ ] 対応バージョン範囲全体を検証済みとする前に、Python 3.10 / Streamlit 1.63 / Plotly 7の交差環境テストを追加する。
-- [ ] 大規模リファクタリングの前に、2026-09-17の外部レビューで確認した低リスク修正を反映する。対象は、NaNに安全なフィルタ範囲と統計、空データ判定のbool化、重複した地図スタイル呼び出し、未使用変数、Advancedページで欠けているAbout URLである。
+- [ ] 大規模リファクタリングの前に、2026-09-17の外部レビューで確認した低リスク修正を反映する。
+  - [x] NaNに安全なフィルタ範囲: スライダー最小・最大値算出に `.dropna()` を追加（4箇所）。
+  - [x] 重複した地図スタイル呼び出し: 無条件の `carto-positron` 行を削除し、`open-street-map` へ切り替え。
+  - [x] Advancedページで欠けているAbout URL: page 55 に追加し page 54 と統一。
+  - [ ] NaNに安全な統計（`np.mean` → `np.nanmean`）: `envgeo4d` 統合時に対応。
+  - [ ] 空データ判定のbool化: `envgeo4d` 統合時に対応。
+  - [ ] 未使用変数（`Transect_list`）: `envgeo4d` 統合時に対応。
 - [ ] API障害、不正なGeoJSON、フィルタ範囲、科学・空間処理ヘルパーについて、Earthquake固有のテストを拡充する。
 - [ ] UI変更後にStreamlitを起動し、Region / hotspot選択の挙動を画面で確認する。
 - [ ] 日本語・英語ページの文言をブラウザ上で確認する。

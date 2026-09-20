@@ -22,9 +22,18 @@ release notes, and major development policies in both English and Japanese.
 
 - [ ] Complete and release the 0.3.1 Python 3.10-3.12 / Streamlit 1.42-1.63 compatibility cycle with Plotly 5.24 as the verified baseline.
   - [x] Update `requirements.txt` to allow Streamlit 1.42-1.63; a fresh deployment resolves to 1.63.
+  - [x] Resolve Streamlit 1.63 dual Session State / `value=` warning in cross-section inputs (pages 55, 57): initialize session state before widgets and remove `value=` arguments.
+  - [x] Add top Fetch/Update button to Advanced pages (55, 57) following the seawater pattern: top button after caption (label without `!`), bottom button at form end (label with `!`), both `use_container_width=True`.
+  - [x] Apply the same top/bottom button pattern to Simple pages (54, 56). Added missing caption to page 54. All four pages now consistent.
 - [ ] Migrate Mapbox traces to the MapLibre APIs available in Plotly 5.24, then test the same implementation with Plotly 6.7 and 7.1.
 - [ ] Add a Python 3.10 / Streamlit 1.63 / Plotly 7 cross-environment test before claiming the full supported-version matrix is verified.
-- [ ] Apply the verified low-risk fixes from the 2026-09-17 external review before larger refactoring: NaN-safe filter bounds and statistics, boolean empty-data checks, duplicate map-style calls, unused variables, and the missing Advanced-page About URL.
+- [ ] Apply the verified low-risk fixes from the 2026-09-17 external review before larger refactoring.
+  - [x] NaN-safe filter bounds: add `.dropna()` to slider min/max calculations (4 locations).
+  - [x] Duplicate map-style calls: remove unconditional `carto-positron` line; switch to `open-street-map`.
+  - [x] Missing Advanced-page About URL: added to page 55 to match page 54.
+  - [ ] NaN-safe statistics (`np.mean` → `np.nanmean`): deferred to `envgeo4d` integration.
+  - [ ] Boolean empty-data checks: deferred to `envgeo4d` integration.
+  - [ ] Unused variable (`Transect_list`): deferred to `envgeo4d` integration.
 - [ ] Expand Earthquake-specific tests for API failures, malformed GeoJSON, filter bounds, and scientific/spatial helper behavior.
 - [ ] Run Streamlit and visually confirm Region / hotspot selection behavior after UI changes.
 - [ ] Confirm Japanese and English page wording in the browser.

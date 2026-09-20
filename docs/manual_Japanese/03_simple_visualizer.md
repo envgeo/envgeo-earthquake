@@ -1,8 +1,8 @@
-# 基本版 4D Visualizer Earthquake
+# 簡易版 4D Visualizer Earthquake
 
-基本版は、USGS 震源カタログを取得し、3D/4D 震源マップと 2D 震源マップで分布を確認するためのページです。
+簡易版は、USGS 震源カタログを取得し、3D/4D 震源マップと 2D 震源マップで分布を確認するためのページです。
 
-![基本版の画面](../assets/screenshots/ja/simple.png)
+![簡易版の画面](../assets/screenshots/ja/simple.png)
 
 *検索条件、取得件数、4D震源マップを一画面で確認できます。図はマウス操作で回転・拡大できます。*
 

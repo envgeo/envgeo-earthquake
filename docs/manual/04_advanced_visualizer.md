@@ -1,6 +1,6 @@
 # Advanced 4D Visualizer
 
-The Advanced visualizer adds plate boundaries, an arbitrary cross-section, a depth profile, a time histogram, and JMA/NIED comparison to the 3D/4D and 2D views.
+The Advanced visualizer adds plate boundaries, a user-defined cross-section, a depth profile, a time histogram, and JMA/NIED comparison to the 3D/4D and 2D views.
 
 ![Advanced visualizer](../assets/screenshots/en/advanced.png)
 
@@ -21,7 +21,7 @@ Enable `Overlay plate boundaries` in the sidebar to add boundaries from the USGS
 
 These lines are schematic and intended for research and education, not official hazard assessment.
 
-## Arbitrary Cross-section
+## User-defined Cross-section
 
 Specify the longitude and latitude of endpoints A and B, then set `Section half-width (km)`. A wider corridor includes more events but lowers spatial specificity; a narrow corridor isolates earthquakes close to the A-B line.
 

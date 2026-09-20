@@ -29,7 +29,7 @@ section-based workflows:
 
 - 2D maps with marker size scaled by magnitude
 - 3D/4D hypocenter plots with depth, magnitude, and colorbar controls
-- arbitrary A-B cross-sections with a section-location map
+- user-defined A-B cross-sections with a section-location map
 - depth-frequency profiles
 - time-series histograms
 - Japan-focused comparison with uploaded JMA/NIED catalog tables in the Advanced page
@@ -79,7 +79,7 @@ Japanese versions of the earthquake visualization workflows:
   scale is more physically meaningful than raw degree axes
 - depth-axis scaling up to 1,000 km
 - plate-boundary overlays from the USGS Tectonic Plate Boundaries service
-- arbitrary cross-section and depth-profile tools
+- user-defined cross-section and depth-profile tools
 - map showing the selected A-B cross-section line and section width
 - time-series histogram of earthquake occurrence
 - CSV export of the selected USGS catalog records
