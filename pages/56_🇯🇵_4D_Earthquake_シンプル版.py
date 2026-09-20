@@ -464,6 +464,9 @@ def sidebar_controls(region_preset):
 
     with st.sidebar.form(f"{PAGE_STATE_PREFIX}_api_parameter", clear_on_submit=False):
         st.header(":blue[--- USGS 地震カタログ API ---]")
+        st.caption(
+            ":red[検索条件を変更した後、**取得 / 更新**を押してデータを取得してください。]"
+        )
         date_range = st.date_input(
             "期間（UTC）",
             value=(default_start_date, default_end_date),
@@ -629,6 +632,7 @@ def visualization_controls(df_plot, query):
     """
     with st.sidebar.container(border=True):
         st.subheader(":blue[--- 可視化設定 ---]")
+        st.caption(":blue[このセクションの変更は自動的に反映されます。]")
 
         depth_min_actual, depth_max_actual = expanded_float_bounds(
             df_plot["Depth_km"], query["depth_min"], query["depth_max"], pad=10.0

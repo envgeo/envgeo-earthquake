@@ -972,6 +972,10 @@ def sidebar_controls(region_preset):
 
     with st.sidebar.form(f"{PAGE_STATE_PREFIX}_api_parameter", clear_on_submit=False):
         st.header(":blue[--- USGS Earthquake API ---]")
+        st.caption(
+            ":red[Change API search conditions, then click **Fetch / update** "
+            "to retrieve the data.]"
+        )
         date_range = st.date_input(
             "Date range (UTC)",
             value=(default_start_date, default_end_date),
@@ -1138,6 +1142,7 @@ def visualization_controls(df_plot, query):
     """
     with st.sidebar.container(border=True):
         st.subheader(":blue[--- Visualization ---]")
+        st.caption(":blue[Changes in this section are applied automatically.]")
 
         depth_min_actual, depth_max_actual = expanded_float_bounds(
             df_plot["Depth_km"], query["depth_min"], query["depth_max"], pad=10.0
@@ -1863,6 +1868,7 @@ def render_cross_section_and_depth_profile(df_plot, query, viz, plate_boundary_d
     color_range, _ = _resolve_color_range(viz, "section")
     st.subheader("Arbitrary Cross-section")
     default_start_lon, default_start_lat, default_end_lon, default_end_lat = default_cross_section_points(query)
+    section_plot_container = st.container()
 
     with st.container(border=True):
         col_start_lon, col_start_lat, col_end_lon, col_end_lat = st.columns(4)
@@ -1929,55 +1935,57 @@ def render_cross_section_and_depth_profile(df_plot, query, viz, plate_boundary_d
     df_section["SectionMarkerSize"] = df_section["SectionMarkerSize"].clip(lower=0.8, upper=22.0)
 
     if section_length_km <= 0:
-        st.warning("Please select two different cross-section endpoints.")
+        with section_plot_container:
+            st.warning("Please select two different cross-section endpoints.")
     else:
         section_mask = df_section["SectionOffset_km"].abs() <= half_width_km
         section_mask &= df_section["SectionDistance_km"].between(0, section_length_km)
         df_section = df_section[section_mask].copy()
 
-        st.write(f"{len(df_section)} events within the selected cross-section window")
-        if df_section.empty:
-            st.warning("No earthquakes are inside this cross-section window.")
-        else:
-            fig_section = px.scatter(
-                df_section,
-                x="SectionDistance_km",
-                y="Depth_km",
-                color=viz["color_column"],
-                color_continuous_scale=earthquake_color_scale(viz["color_column"]),
-                range_color=color_range,
-                hover_data={
-                    "DateTime_UTC": True,
-                    "Place": True,
-                    "Magnitude": True,
-                    "Depth_km": True,
-                    "Longitude_degE": True,
-                    "Latitude_degN": True,
-                    "SectionOffset_km": ":.1f",
-                    "MarkerSize": False,
-                    "SectionMarkerSize": False,
-                },
-                height=480,
-            )
-            fig_section.update_traces(
-                marker=dict(
-                    size=df_section["SectionMarkerSize"].tolist(),
-                    opacity=0.78,
-                    line=dict(color="rgba(255,255,255,0.0)", width=0.0),
+        with section_plot_container:
+            st.write(f"{len(df_section)} events within the selected cross-section window")
+            if df_section.empty:
+                st.warning("No earthquakes are inside this cross-section window.")
+            else:
+                fig_section = px.scatter(
+                    df_section,
+                    x="SectionDistance_km",
+                    y="Depth_km",
+                    color=viz["color_column"],
+                    color_continuous_scale=earthquake_color_scale(viz["color_column"]),
+                    range_color=color_range,
+                    hover_data={
+                        "DateTime_UTC": True,
+                        "Place": True,
+                        "Magnitude": True,
+                        "Depth_km": True,
+                        "Longitude_degE": True,
+                        "Latitude_degN": True,
+                        "SectionOffset_km": ":.1f",
+                        "MarkerSize": False,
+                        "SectionMarkerSize": False,
+                    },
+                    height=480,
                 )
-            )
-            fig_section.update_layout(
-                xaxis_title="Distance along section (km)",
-                yaxis_title="Hypocenter depth (km)",
-                yaxis=dict(range=[viz["fig_depth_max"], viz["fig_depth_min"]]),
-                margin=dict(l=10, r=10, t=20, b=20),
-                coloraxis_colorbar=dict(title=viz["color_label"]),
-            )
-            st.plotly_chart(
-                fig_section,
-                key="earthquake_cross_section",
-                **envgeo_utils.stretch_width_kwargs(st.plotly_chart),
-            )
+                fig_section.update_traces(
+                    marker=dict(
+                        size=df_section["SectionMarkerSize"].tolist(),
+                        opacity=0.78,
+                        line=dict(color="rgba(255,255,255,0.0)", width=0.0),
+                    )
+                )
+                fig_section.update_layout(
+                    xaxis_title="Distance along section (km)",
+                    yaxis_title="Hypocenter depth (km)",
+                    yaxis=dict(range=[viz["fig_depth_max"], viz["fig_depth_min"]]),
+                    margin=dict(l=10, r=10, t=20, b=20),
+                    coloraxis_colorbar=dict(title=viz["color_label"]),
+                )
+                st.plotly_chart(
+                    fig_section,
+                    key="earthquake_cross_section",
+                    **envgeo_utils.stretch_width_kwargs(st.plotly_chart),
+                )
         render_cross_section_location_map(
             df_plot,
             df_section,

@@ -466,6 +466,10 @@ def sidebar_controls(region_preset):
 
     with st.sidebar.form(f"{PAGE_STATE_PREFIX}_api_parameter", clear_on_submit=False):
         st.header(":blue[--- USGS Earthquake API ---]")
+        st.caption(
+            ":red[Change API search conditions, then click **Fetch / update** "
+            "to retrieve the data.]"
+        )
         date_range = st.date_input(
             "Date range (UTC)",
             value=(default_start_date, default_end_date),
@@ -632,6 +636,7 @@ def visualization_controls(df_plot, query):
     """
     with st.sidebar.container(border=True):
         st.subheader(":blue[--- Visualization ---]")
+        st.caption(":blue[Changes in this section are applied automatically.]")
 
         depth_min_actual, depth_max_actual = expanded_float_bounds(
             df_plot["Depth_km"], query["depth_min"], query["depth_max"], pad=10.0

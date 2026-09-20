@@ -958,6 +958,9 @@ def sidebar_controls(region_preset):
 
     with st.sidebar.form(f"{PAGE_STATE_PREFIX}_api_parameter", clear_on_submit=False):
         st.header(":blue[--- USGS 地震カタログ API ---]")
+        st.caption(
+            ":red[検索条件を変更した後、**取得 / 更新**を押してデータを取得してください。]"
+        )
         date_range = st.date_input(
             "期間（UTC）",
             value=(default_start_date, default_end_date),
@@ -1123,6 +1126,7 @@ def visualization_controls(df_plot, query):
     """
     with st.sidebar.container(border=True):
         st.subheader(":blue[--- 可視化設定 ---]")
+        st.caption(":blue[このセクションの変更は自動的に反映されます。]")
 
         depth_min_actual, depth_max_actual = expanded_float_bounds(
             df_plot["Depth_km"], query["depth_min"], query["depth_max"], pad=10.0
@@ -1854,6 +1858,7 @@ def render_cross_section_and_depth_profile(df_plot, query, viz, plate_boundary_d
     color_range, _ = _resolve_color_range(viz, "section")
     st.subheader("任意断面図")
     default_start_lon, default_start_lat, default_end_lon, default_end_lat = default_cross_section_points(query)
+    section_plot_container = st.container()
 
     with st.container(border=True):
         col_start_lon, col_start_lat, col_end_lon, col_end_lat = st.columns(4)
@@ -1920,55 +1925,57 @@ def render_cross_section_and_depth_profile(df_plot, query, viz, plate_boundary_d
     df_section["SectionMarkerSize"] = df_section["SectionMarkerSize"].clip(lower=0.8, upper=22.0)
 
     if section_length_km <= 0:
-        st.warning("断面の始点と終点を異なる座標にしてください。")
+        with section_plot_container:
+            st.warning("断面の始点と終点を異なる座標にしてください。")
     else:
         section_mask = df_section["SectionOffset_km"].abs() <= half_width_km
         section_mask &= df_section["SectionDistance_km"].between(0, section_length_km)
         df_section = df_section[section_mask].copy()
 
-        st.write(f"断面ウィンドウ内イベント数: {len(df_section)} 件")
-        if df_section.empty:
-            st.warning("この断面ウィンドウ内に地震イベントがありません。")
-        else:
-            fig_section = px.scatter(
-                df_section,
-                x="SectionDistance_km",
-                y="Depth_km",
-                color=viz["color_column"],
-                color_continuous_scale=earthquake_color_scale(viz["color_column"]),
-                range_color=color_range,
-                hover_data={
-                    "DateTime_UTC": True,
-                    "Place": True,
-                    "Magnitude": True,
-                    "Depth_km": True,
-                    "Longitude_degE": True,
-                    "Latitude_degN": True,
-                    "SectionOffset_km": ":.1f",
-                    "MarkerSize": False,
-                    "SectionMarkerSize": False,
-                },
-                height=480,
-            )
-            fig_section.update_traces(
-                marker=dict(
-                    size=df_section["SectionMarkerSize"].tolist(),
-                    opacity=0.78,
-                    line=dict(color="rgba(255,255,255,0.0)", width=0.0),
+        with section_plot_container:
+            st.write(f"断面ウィンドウ内イベント数: {len(df_section)} 件")
+            if df_section.empty:
+                st.warning("この断面ウィンドウ内に地震イベントがありません。")
+            else:
+                fig_section = px.scatter(
+                    df_section,
+                    x="SectionDistance_km",
+                    y="Depth_km",
+                    color=viz["color_column"],
+                    color_continuous_scale=earthquake_color_scale(viz["color_column"]),
+                    range_color=color_range,
+                    hover_data={
+                        "DateTime_UTC": True,
+                        "Place": True,
+                        "Magnitude": True,
+                        "Depth_km": True,
+                        "Longitude_degE": True,
+                        "Latitude_degN": True,
+                        "SectionOffset_km": ":.1f",
+                        "MarkerSize": False,
+                        "SectionMarkerSize": False,
+                    },
+                    height=480,
                 )
-            )
-            fig_section.update_layout(
-                xaxis_title="断面に沿った距離（km）",
-                yaxis_title="震源深さ（km）",
-                yaxis=dict(range=[viz["fig_depth_max"], viz["fig_depth_min"]]),
-                margin=dict(l=10, r=10, t=20, b=20),
-                coloraxis_colorbar=dict(title=viz["color_label"]),
-            )
-            st.plotly_chart(
-                fig_section,
-                key="earthquake_cross_section",
-                **envgeo_utils.stretch_width_kwargs(st.plotly_chart),
-            )
+                fig_section.update_traces(
+                    marker=dict(
+                        size=df_section["SectionMarkerSize"].tolist(),
+                        opacity=0.78,
+                        line=dict(color="rgba(255,255,255,0.0)", width=0.0),
+                    )
+                )
+                fig_section.update_layout(
+                    xaxis_title="断面に沿った距離（km）",
+                    yaxis_title="震源深さ（km）",
+                    yaxis=dict(range=[viz["fig_depth_max"], viz["fig_depth_min"]]),
+                    margin=dict(l=10, r=10, t=20, b=20),
+                    coloraxis_colorbar=dict(title=viz["color_label"]),
+                )
+                st.plotly_chart(
+                    fig_section,
+                    key="earthquake_cross_section",
+                    **envgeo_utils.stretch_width_kwargs(st.plotly_chart),
+                )
         render_cross_section_location_map(
             df_plot,
             df_section,
