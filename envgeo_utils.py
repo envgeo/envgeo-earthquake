@@ -579,10 +579,8 @@ def apply_map_style(fig, map_mode):
     static exports or publication figures.
     """
     
-    fig.update_layout(mapbox_style="carto-positron")
-
     if map_mode == "Standard":
-        fig.update_layout(mapbox_style="carto-positron")
+        fig.update_layout(mapbox_style="open-street-map")
         
     
     elif map_mode == "Satellite":
@@ -1056,8 +1054,8 @@ def sidebar_filter_and_display(df1, ref_data, data_source_JAPAN_SEA, data_source
         # Safely compute the minimum and maximum, then floor/ceil them / 最小値・最大値を安全に取得し、切り下げ・切り上げする
         # 1. データの最小値・最大値を安全に取得し、切り下げ・切り上げを行う
         # 経度は範囲が広いため、整数(int)にしておくとユーザーが操作しやすくなる
-        min_df_lon = int(math.floor(df1['Longitude_degE'].min()))
-        max_df_lon = int(math.ceil(df1['Longitude_degE'].max()))
+        min_df_lon = int(math.floor(df1['Longitude_degE'].dropna().min()))
+        max_df_lon = int(math.ceil(df1['Longitude_degE'].dropna().max()))
         
         # 2. スライダーの設定
         sld_lon_min, sld_lon_max = st.slider(
@@ -1087,8 +1085,8 @@ def sidebar_filter_and_display(df1, ref_data, data_source_JAPAN_SEA, data_source
         # 小数点以下を考慮して、最小値は切り下げ、最大値は切り上げる
         # Floor the minimum and ceil the maximum to keep the slider robust / スライダーを安定させるため、最小値は切り下げ、最大値は切り上げる
         
-        max_df_lat = int(math.ceil(df1['Latitude_degN'].max()))
-        min_df_lat = int(math.floor(df1['Latitude_degN'].min()))
+        max_df_lat = int(math.ceil(df1['Latitude_degN'].dropna().max()))
+        min_df_lat = int(math.floor(df1['Latitude_degN'].dropna().min()))
         
         # 2. スライダーの設定
         sld_lat_min, sld_lat_max = st.slider(
@@ -1117,8 +1115,8 @@ def sidebar_filter_and_display(df1, ref_data, data_source_JAPAN_SEA, data_source
 
         # Floor the minimum and ceil the maximum, then use integer steps / 最小値は切り下げ、最大値は切り上げた上で整数刻みにする
         # 水深は範囲が広いため、int型に変換してスッキリ
-        min_depth = int(math.floor(df1['Depth_m'].min()))
-        max_depth = int(math.ceil(df1['Depth_m'].max()))
+        min_depth = int(math.floor(df1['Depth_m'].dropna().min()))
+        max_depth = int(math.ceil(df1['Depth_m'].dropna().max()))
         
         # 2. スライダーの設定
         if min_depth == max_depth:
@@ -1159,8 +1157,8 @@ def sidebar_filter_and_display(df1, ref_data, data_source_JAPAN_SEA, data_source
         ##########################
         # Use integer bounds for a simpler salinity slider / 塩分スライダーを簡潔に保つため整数範囲を使う
         
-        min_df_sal = int(math.floor(df1['Salinity'].min()))
-        max_df_sal = int(math.ceil(df1['Salinity'].max()))
+        min_df_sal = int(math.floor(df1['Salinity'].dropna().min()))
+        max_df_sal = int(math.ceil(df1['Salinity'].dropna().max()))
 
         
         # 2. スライダーの設定

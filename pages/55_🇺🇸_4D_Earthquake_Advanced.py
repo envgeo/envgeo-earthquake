@@ -36,6 +36,7 @@ st.set_page_config(
             "exploration app based on EnvGeo-Seawater."
             " / EnvGeo-Seawater をもとにした、"
             "研究・教育向けの地震カタログ探索アプリです。/ "
+            "https://envgeo.h.kyoto-u.ac.jp"
             " / (Toyoho Ishimura@Kyoto-Univ. 2026) "
         ),
     },
