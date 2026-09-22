@@ -22,7 +22,7 @@ import streamlit as st
 import envgeo_utils
 
 
-version = "0.3.1"  # 2026-09-19
+version = "0.3.2"  # 2026-09-22
 PAGE_STATE_PREFIX = "eq_ja_advanced"
 
 st.set_page_config(
@@ -2515,6 +2515,7 @@ def main():
         """,
         unsafe_allow_html=True,
     )
+    envgeo_utils.render_earthquake_tab_style()
     st.caption("タブを選択して表示を切り替えてください。")
 
     tab_3d, tab_2d, tab_profiles, tab_time, tab_compare, tab_data = st.tabs(

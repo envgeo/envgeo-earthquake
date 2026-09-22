@@ -11,10 +11,11 @@ import re
 from pathlib import Path
 
 import streamlit as st
+import envgeo_utils
 
 
 BASE_DIR = Path(__file__).resolve().parent
-APP_VERSION = "0.3.1"
+APP_VERSION = "0.3.2"
 
 URLS = {
     "lab": "https://envgeo.h.kyoto-u.ac.jp/simple-earthquake-hypocenter-visualization/",
@@ -192,6 +193,7 @@ def main():
     )
 
     render_tab_style()
+    envgeo_utils.render_earthquake_tab_style()
     st.caption("Select a tab to switch information sections.")
     tab_main, tab_about, tab_sources, tab_manual, tab_limits, tab_updates, tab_readme = st.tabs(
         [
@@ -377,7 +379,14 @@ Illustrated manuals are available in this repository:
         st.header("Update History")
         st.markdown(
             """
-- `0.3.1` (Unreleased, updated 2026-09-20)
+- `0.3.2` (2026-09-22)
+  - **Fixed:** Restored the card-style tab appearance under Streamlit 1.63 by styling the current React/ARIA tab DOM as well as the earlier BaseWeb DOM. The shared tab helper is now used wherever tabs are present.
+  - **Changed:** Updated the app and all active English/Japanese Simple/Advanced pages to version 0.3.2.
+  - **Verified:** Targeted local regression tests passed after the Streamlit 1.63 tab compatibility update.
+
+- `0.3.1` (Unreleased, updated 2026-09-21)
+  - **Changed:** Replaced the local 50m and 110m coastline Excel assets with CSV files loaded through the shared coastline helper; superseded coastline workbooks were moved to the workspace archive.
+  - **Fixed:** Completed page-specific API widget state isolation for the English Simple page and restored invalid longitude/latitude ranges to the selected regional preset.
   - **Improved:** Added compatibility handling for Python 3.10-3.12 and Streamlit 1.42-1.63 migration testing.
   - **Changed:** Updated the runtime requirement to allow Streamlit 1.42-1.63 while retaining Plotly 5.24 as the verified baseline.
   - **Fixed:** Removed duplicate default/session-state assignment for Region longitude and latitude sliders on Streamlit 1.63.

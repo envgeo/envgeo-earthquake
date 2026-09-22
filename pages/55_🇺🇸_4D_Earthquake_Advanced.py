@@ -22,7 +22,7 @@ import streamlit as st
 import envgeo_utils
 
 
-version = "0.3.1"  # 2026-09-19
+version = "0.3.2"  # 2026-09-22
 PAGE_STATE_PREFIX = "eq_en_advanced"
 
 st.set_page_config(
@@ -2410,7 +2410,7 @@ def main():
         st.markdown(f"- [ANSS / USGS FDSN data-center record]({USGS_COMCAT_FDSN_URL})")
         st.markdown(f"- [USGS Copyrights and Credits]({USGS_CREDIT_URL})")
         st.caption(
-            "Local coastline Excel files used in 3D reference overlays do not contain "
+            "Local coastline CSV files used in 3D reference overlays do not contain "
             "source/license metadata in this repository; treat them as visual guides only."
         )
         render_plate_boundary_note()
@@ -2529,6 +2529,7 @@ def main():
         """,
         unsafe_allow_html=True,
     )
+    envgeo_utils.render_earthquake_tab_style()
     st.caption("Select a tab to switch visualization views.")
 
     tab_3d, tab_2d, tab_profiles, tab_time, tab_compare, tab_data = st.tabs(

@@ -7,8 +7,8 @@ Created on Sat Apr 22 17:15:03 2023
 """
 
 # --- App version / バージョン情報 ---
-APP_VERSION = "0.3.1"
-APP_VERSION_DATE = "2026-09-19"
+APP_VERSION = "0.3.2"
+APP_VERSION_DATE = "2026-09-22"
 version = APP_VERSION
 
 
@@ -18,6 +18,7 @@ import numpy as np
 import inspect
 import math
 import json
+from pathlib import Path
 from datetime import date, datetime
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
@@ -60,6 +61,79 @@ def stretch_width_kwargs(widget):
     if supports_stretch:
         return {"width": "stretch"}
     return {"use_container_width": True}
+
+
+def render_earthquake_tab_style():
+    """Apply the shared card-style tabs in Streamlit 1.42--1.63.
+
+    Streamlit 1.63 migrated tabs from BaseWeb to React Aria.  Both selector
+    families are retained so the public English and Japanese pages look the
+    same in every supported environment.
+    """
+    st.markdown(
+        """
+        <style>
+        /* Streamlit 1.42--1.62 (BaseWeb). */
+        div[data-baseweb="tab-list"] { gap: 0.25rem; flex-wrap: wrap; }
+        div[data-baseweb="tab-list"] button[role="tab"] {
+            background: rgba(248, 249, 250, 0.95); color: #1f2937;
+            border: 1px solid rgba(49, 51, 63, 0.22); border-radius: 6px 6px 0 0;
+            padding: 0.35rem 0.65rem; min-height: 2.1rem; white-space: nowrap;
+            font-weight: 600;
+        }
+        div[data-baseweb="tab-list"] button[role="tab"] p { margin: 0; color: inherit; }
+        div[data-baseweb="tab-list"] button[role="tab"][aria-selected="true"] {
+            background: linear-gradient(180deg, #e8f2ff 0%, #ddeaff 100%);
+            border-color: #4a90e2; color: #0b3e75;
+            box-shadow: inset 0 0 0 1px rgba(74, 144, 226, 0.35);
+        }
+        /* Streamlit 1.63+ (React Aria). */
+        [data-testid="stTabs"] [role="tablist"] {
+            gap: 0.25rem !important; flex-wrap: wrap !important;
+            border-bottom: 1px solid rgba(49, 51, 63, 0.18) !important;
+            padding-bottom: 0 !important;
+        }
+        [data-testid="stTabs"] [role="tablist"]::after {
+            background-color: transparent !important; height: 0 !important;
+        }
+        [data-testid="stTabs"] [data-testid="stTab"] {
+            height: auto !important; min-height: 2.1rem !important;
+            padding: 0.35rem 0.65rem !important;
+            background: rgba(248, 249, 250, 0.95) !important; color: #1f2937 !important;
+            border: 1px solid rgba(49, 51, 63, 0.22) !important;
+            border-radius: 6px 6px 0 0 !important; font-weight: 600 !important;
+        }
+        [data-testid="stTabs"] [data-testid="stTab"] p {
+            margin: 0 !important; color: inherit !important;
+        }
+        [data-testid="stTabs"] [data-testid="stTab"] .react-aria-SelectionIndicator {
+            height: 0 !important; background-color: transparent !important;
+        }
+        [data-testid="stTabs"] [data-testid="stTab"][data-selected] {
+            background: linear-gradient(180deg, #e8f2ff 0%, #ddeaff 100%) !important;
+            border-color: #4a90e2 !important; color: #0b3e75 !important;
+            box-shadow: inset 0 0 0 1px rgba(74, 144, 226, 0.35) !important;
+        }
+        @media (prefers-color-scheme: dark) {
+            [data-testid="stTabs"] [data-testid="stTab"] {
+                background: rgba(44, 49, 61, 0.96) !important;
+                color: rgba(245, 247, 250, 0.95) !important;
+                border-color: rgba(240, 244, 250, 0.26) !important;
+            }
+            [data-testid="stTabs"] [data-testid="stTab"][data-selected] {
+                background: linear-gradient(180deg, #204061 0%, #1a314a 100%) !important;
+                color: #e9f2ff !important; border-color: #76adff !important;
+            }
+        }
+        @media (max-width: 900px) {
+            [data-testid="stTabs"] [data-testid="stTab"] {
+                font-size: 0.86rem !important; padding: 0.30rem 0.52rem !important;
+            }
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 configure_pandas_compatibility()
@@ -262,23 +336,31 @@ def load_isotope_data(ref_data, sheet_num=0):
 ##############################################################################
 """
 @st.cache_data
-def load_coastline_data(ref_data):
-    
-    # 1. Select the source file (currently 50 m for all regions) / 1. 読み込みファイルを選択する（現状は全地域で50m解像度）
-    if ref_data == data_source_GLOBAL:
-        coastline_excel = 'coastline/world_coastline_coordinates_50m.xlsx'
-    else:
-        # Note: Regional settings (e.g., Japan Sea) currently utilize the global file　/ 注: 日本海など地域設定でも現状はグローバル海岸線ファイルを流用している
-        # coastline_excel = 'coastline/japan_coast_line.xlsx'
-        coastline_excel = 'coastline/world_coastline_coordinates_50m.xlsx'
-        
-    
-    # 2. Process data loading / 2. 海岸線データを読み込む
+def load_coastline_data(ref_data, resolution="50m"):
+    """Load shared Natural Earth coastline coordinates from CSV."""
+    _ = ref_data
+    coastline_files = {
+        "50m": "world_coastline_coordinates_50m.csv",
+        "110m": "world_coastline_coordinates_110m.csv",
+    }
+    if resolution not in coastline_files:
+        st.error(
+            f"Unsupported coastline resolution: {resolution}. "
+            "Choose '50m' or '110m'."
+        )
+        return [], []
+
+    coastline_path = (
+        Path(__file__).resolve().parent
+        / "coastline"
+        / coastline_files[resolution]
+    )
+
     try:
-        df_coast = pd.read_excel(coastline_excel)
+        df_coast = pd.read_csv(coastline_path)
         return df_coast['Longitude'].tolist(), df_coast['Latitude'].tolist()
     except Exception as e:
-        st.error(f"Failed to load the file.: {coastline_excel} - {e}")
+        st.error(f"Failed to load the coastline file: {coastline_path.name} - {e}")
         return [], []
 
 

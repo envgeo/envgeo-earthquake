@@ -20,7 +20,7 @@ release notes, and major development policies in both English and Japanese.
 
 ## Near-Term Tasks
 
-- [ ] Complete and release the 0.3.1 Python 3.10-3.12 / Streamlit 1.42-1.63 compatibility cycle with Plotly 5.24 as the verified baseline.
+- [ ] Complete the remaining visual checks for the 0.3.2 Python 3.10-3.12 / Streamlit 1.42-1.63 compatibility cycle with Plotly 5.24 as the verified baseline, then decide on a public release.
   - [x] Update `requirements.txt` to allow Streamlit 1.42-1.63; a fresh deployment resolves to 1.63.
   - [x] Resolve Streamlit 1.63 dual Session State / `value=` warning in cross-section inputs (pages 55, 57): initialize session state before widgets and remove `value=` arguments.
   - [x] Add top Fetch/Update button to Advanced pages (55, 57) following the seawater pattern: top button after caption (label without `!`), bottom button at form end (label with `!`), both `use_container_width=True`.

@@ -18,7 +18,7 @@ import streamlit as st
 import envgeo_utils
 
 
-version = "0.3.1"  # 2026-09-19
+version = "0.3.2"  # 2026-09-22
 PAGE_STATE_PREFIX = "eq_ja_simple"
 
 

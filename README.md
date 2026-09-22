@@ -7,6 +7,8 @@ hypocenter catalogs in research and education.
 [![Python](https://img.shields.io/badge/python-3.10--3.12-blue.svg)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
+**Current development version:** 0.3.2 (2026-09-22)
+
 This application adapts the spatial 3D/4D visualization workflow of
 **EnvGeo-Seawater** (https://envgeo.h.kyoto-u.ac.jp/sw_jpn/) to earthquake
 catalog data. EnvGeo-Seawater was developed for interactive visualization of
@@ -389,7 +391,7 @@ df.attrs["query_url"]
   Japanese advanced earthquake visualizer, including JMA/NIED comparison tools.
 
 - `coastline/`  
-  Local coastline coordinate files for 3D reference overlays.
+  Local 50m and 110m coastline coordinate CSV files for 3D reference overlays.
 
 - `test/`  
   Local tests for utility imports, USGS GeoJSON normalization, and optional

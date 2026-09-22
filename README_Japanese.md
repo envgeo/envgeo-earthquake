@@ -7,6 +7,8 @@ EnvGeo-Earthquake は、研究・教育向けに地震の震源カタログを�
 [![Python](https://img.shields.io/badge/python-3.10--3.12-blue.svg)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
+**現在の開発バージョン:** 0.3.2（2026-09-22）
+
 このアプリケーションは、**EnvGeo-Seawater**
 (https://envgeo.h.kyoto-u.ac.jp/sw_jpn/) の空間 3D/4D 可視化ワークフローを、
 地震カタログデータに応用したものです。EnvGeo-Seawater は、海洋学・海洋地球化学
@@ -364,7 +366,7 @@ df.attrs["query_url"]
   日本語版の JMA/NIED 比較機能を含む詳細版の地震カタログ探索ページです。
 
 - `coastline/`  
-  3D 参照オーバーレイ用のローカル海岸線座標ファイルです。
+  3D 参照オーバーレイ用の50m・110mローカル海岸線座標CSVファイルです。
 
 - `test/`  
   ユーティリティの import、USGS GeoJSON 正規化、任意の継承データセット確認を行うローカルテストです。

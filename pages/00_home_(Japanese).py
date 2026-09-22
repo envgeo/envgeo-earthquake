@@ -11,10 +11,11 @@ import re
 from pathlib import Path
 
 import streamlit as st
+import envgeo_utils
 
 
 BASE_DIR = Path(__file__).resolve().parent
-APP_VERSION = "0.3.1"
+APP_VERSION = "0.3.2"
 
 URLS = {
     "lab": "https://envgeo.h.kyoto-u.ac.jp/simple-earthquake-hypocenter-visualization/",
@@ -192,6 +193,7 @@ def main():
     )
 
     render_tab_style()
+    envgeo_utils.render_earthquake_tab_style()
     st.caption("タブを選択して表示セクションを切り替えてください。")
     tab_main, tab_about, tab_sources, tab_manual, tab_limits, tab_updates, tab_readme = st.tabs(
         ["🏠 メイン", "ℹ️ 概要", "🧾 データ出典", "🛠️ 使い方", "⚠️ 制約", "🆕 更新履歴", "📘 README"]
@@ -359,7 +361,14 @@ def main():
         st.header("更新履歴")
         st.markdown(
             """
-- `0.3.1`（未リリース、2026-09-19更新）
+- `0.3.2`（2026-09-22）
+  - **修正:** Streamlit 1.63で変化したReact/ARIA方式のタブDOMと従来のBaseWeb方式の両方を対象にし、カード型タブ表示を復元。タブを持つ全ページで共通ヘルパーを利用する構成へ統一。
+  - **変更:** アプリ本体と英語・日本語のSimple / Advanced全ページを0.3.2へ更新。
+  - **確認:** Streamlit 1.63のタブ互換修正後、対象ローカル回帰テストに合格。
+
+- `0.3.1`（未リリース、2026-09-21更新）
+  - **変更:** ローカルの50m・110m海岸線データをExcelからCSVへ置き換え、共通海岸線ヘルパーから読み込む構成に統一。旧海岸線Excelは作業領域の過去パーツへ退避。
+  - **修正:** 英語SimpleページのAPI検索条件をページ固有の状態キーへ統一し、不正な経度・緯度範囲を選択中の地域プリセットへ戻す処理を追加。
   - **改善:** Python 3.10〜3.12、Streamlit 1.42〜1.63の移行確認に向けた互換処理を追加。
   - **変更:** Plotly 5.24を検証済み基準として維持しながら、Streamlit 1.42〜1.63を許容する実行環境設定へ更新。
   - **修正:** Regionの経度・緯度スライダーで既定値とセッション値が二重指定されるStreamlit 1.63警告を解消。

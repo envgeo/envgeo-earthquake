@@ -4,6 +4,7 @@ Use this checklist before committing, tagging, or publishing a release.
 
 ## Documentation And Metadata
 
+- [ ] Confirm the app and active pages show version `0.3.2`.
 - [ ] Update `README.md` and `README_Japanese.md` when user-facing behavior, page names, sources, limitations, or EnvGeo-Seawater relationship changes.
 - [ ] Update `docs/testing_Japanese.md` when tests change.
 - [ ] Update Home update history when the change should be visible in the app.
