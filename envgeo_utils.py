@@ -24,6 +24,10 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
+import socket
+import time
+from functools import lru_cache
+
 import warnings # for M1/M2 Mac
 # Shapely の内部計算（intersects, intersection, buffer等）から出る
 # すべての RuntimeWarning を一括で非表示にする
@@ -707,11 +711,150 @@ def apply_map_style(fig, map_mode):
         )
         
     
+    elif map_mode == "Coastline (offline)":
+        # Offline mode: white background, no external tile URL.
+        fig.update_layout(mapbox_style="white-bg")
+
     # Unified layout settings for maximum map area
     fig.update_layout(margin=dict(l=0, r=0, t=0, b=0))
-    
+
     return fig
 
+
+"""
+##############################################################################
+# --- 5b. OFFLINE MAP HELPERS ---
+# Connectivity check, automatic offline fallback, coastline and graticule
+# overlays for the "Coastline (offline)" mode.
+##############################################################################
+"""
+
+# Map mode options presented in UI widgets (offline first, so users notice it)
+MAP_MODE_OPTIONS: list = [
+    "Coastline (offline)",
+    "Standard",
+    "Satellite",
+    "Bathymetry (Sea)",
+    "Contour (GSI)",
+]
+MAP_MODE_DEFAULT: str = "Standard"
+MAP_MODE_DEFAULT_INDEX: int = MAP_MODE_OPTIONS.index(MAP_MODE_DEFAULT)  # 1
+
+# Warning shown when an online mode falls back to offline
+OFFLINE_FALLBACK_WARNING: str = (
+    "⚠️ Tile server unreachable — switched to Coastline (offline) mode automatically. "
+    "Check your network connection."
+)
+
+# Per-mode tile hosts used for connectivity probing
+_MODE_TILE_HOSTS: dict = {
+    "Standard":         ("tile.openstreetmap.org",                443),
+    "Satellite":        ("basemap.nationalmap.gov",               443),
+    "Bathymetry (Sea)": ("services.arcgisonline.com",             443),
+    "Contour (GSI)":    ("cyberjapandata.gsi.go.jp",              443),
+}
+_DEFAULT_TILE_HOST = ("tile.openstreetmap.org", 443)
+
+_CONNECTIVITY_TIMEOUT_S: float = 3.0    # socket connect timeout
+_CONNECTIVITY_CACHE_INTERVAL_S: int = 60  # seconds per cache bucket
+
+
+@lru_cache(maxsize=64)
+def _check_connectivity_cached(bucket: int, host: str, port: int) -> bool:
+    """LRU-cached inner check; ``bucket`` drives the 60-second TTL."""
+    try:
+        conn = socket.create_connection((host, port), timeout=_CONNECTIVITY_TIMEOUT_S)
+        conn.close()
+        return True
+    except OSError:
+        return False
+
+
+def check_online_connectivity(mode: str = "Standard") -> bool:
+    """Return True if the tile server for *mode* is reachable.
+
+    Result is cached for up to ``_CONNECTIVITY_CACHE_INTERVAL_S`` seconds so
+    repeated calls within the same Streamlit re-run do not open extra sockets.
+    No real network call is made for "Coastline (offline)".
+    """
+    host, port = _MODE_TILE_HOSTS.get(mode, _DEFAULT_TILE_HOST)
+    bucket = int(time.time()) // _CONNECTIVITY_CACHE_INTERVAL_S
+    return _check_connectivity_cached(bucket, host, port)
+
+
+def resolve_map_mode(map_mode: str):
+    """Return (effective_mode, fell_back).
+
+    If *map_mode* is "Coastline (offline)" the check is skipped.
+    Any other mode that cannot reach its tile server falls back to
+    "Coastline (offline)" and returns ``fell_back=True``.
+    """
+    if map_mode == "Coastline (offline)":
+        return map_mode, False
+    if not check_online_connectivity(map_mode):
+        return "Coastline (offline)", True
+    return map_mode, False
+
+
+def add_coastline_overlay(fig) -> bool:
+    """Add a bundled 50-m coastline as a Scattermapbox trace.
+
+    Returns True if the overlay was added, False if coastline data is missing.
+    The trace is named ``_coastline_overlay`` for easy identification.
+    """
+    import plotly.graph_objects as go
+    lon, lat = load_coastline_data(None, resolution="50m")
+    if not lon:
+        return False
+    fig.add_trace(
+        go.Scattermapbox(
+            lon=lon,
+            lat=lat,
+            mode="lines",
+            line=dict(width=0.8, color="rgba(40,40,40,0.75)"),
+            showlegend=False,
+            hoverinfo="none",
+            name="_coastline_overlay",
+        )
+    )
+    return True
+
+
+def add_graticule_overlay(fig, lat_step: int = 30, lon_step: int = 30) -> None:
+    """Add a lat/lon graticule grid as a Scattermapbox trace.
+
+    Parallels sweep lon −180→180 at each *lat_step*-degree latitude.
+    Meridians sweep lat −90→90 at each *lon_step*-degree longitude.
+    None separators prevent antimeridian rendering artefacts.
+    """
+    import plotly.graph_objects as go
+    lons_g: list = []
+    lats_g: list = []
+    # Parallels
+    for lat in range(-90, 91, lat_step):
+        for lon in range(-180, 181):
+            lons_g.append(float(lon))
+            lats_g.append(float(lat))
+        lons_g.append(None)
+        lats_g.append(None)
+    # Meridians
+    for lon in range(-180, 181, lon_step):
+        for lat in range(-90, 91):
+            lons_g.append(float(lon))
+            lats_g.append(float(lat))
+        lons_g.append(None)
+        lats_g.append(None)
+    fig.add_trace(
+        go.Scattermapbox(
+            lon=lons_g,
+            lat=lats_g,
+            mode="lines",
+            line=dict(width=0.4, color="rgba(150,150,150,0.35)"),
+            showlegend=False,
+            hoverinfo="none",
+            name="_graticule_overlay",
+        )
+    )
 
 
 """

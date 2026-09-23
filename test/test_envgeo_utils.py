@@ -146,6 +146,20 @@ def test_load_coastline_data_returns_same_length_coordinate_lists():
     assert len(lon) == len(lat)
 
 
+def test_load_coastline_data_supports_110m_csv():
+    lon_50m, lat_50m = envgeo_utils.load_coastline_data(
+        envgeo_utils.data_source_GLOBAL,
+        resolution="50m",
+    )
+    lon_110m, lat_110m = envgeo_utils.load_coastline_data(
+        envgeo_utils.data_source_GLOBAL,
+        resolution="110m",
+    )
+
+    assert len(lon_110m) == len(lat_110m)
+    assert 0 < len(lon_110m) < len(lon_50m)
+
+
 def test_usgs_geojson_to_dataframe_normalizes_core_columns():
     payload = {
         "type": "FeatureCollection",

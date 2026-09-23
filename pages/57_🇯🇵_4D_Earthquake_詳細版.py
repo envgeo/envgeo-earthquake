@@ -1554,10 +1554,26 @@ def render_2d_distribution_map(df_plot, query, viz, plate_boundary_df=None):
 
     map_mode = st.radio(
         "地図スタイル:",
-        ["標準", "衛星画像", "海底地形（海域）", "等高線（国土地理院）"],
+        ["海岸線", "標準", "衛星画像", "海底地形（海域）", "等高線（国土地理院）"],
+        index=1,  # "標準" をデフォルト
         horizontal=True,
         key="eq_map_style",
     )
+    _MAP_MODE_JA_TO_EN = {
+        "海岸線": "Coastline (offline)",
+        "標準": "Standard",
+        "衛星画像": "Satellite",
+        "海底地形（海域）": "Bathymetry (Sea)",
+        "等高線（国土地理院）": "Contour (GSI)",
+    }
+    map_mode_for_style = _MAP_MODE_JA_TO_EN[map_mode]
+    _eff_57, _fell_57 = envgeo_utils.resolve_map_mode(map_mode_for_style)
+    if _fell_57:
+        st.warning(envgeo_utils.OFFLINE_FALLBACK_WARNING)
+        st.caption(f"地図スタイル: 海岸線← {map_mode} 縮退 / fell back (network unreachable)")
+    else:
+        _EFF_LABEL_JA = {v: k for k, v in _MAP_MODE_JA_TO_EN.items()}
+        st.caption(f"地図スタイル: {_EFF_LABEL_JA.get(_eff_57, _eff_57)}")
 
     lon_center_hint = None
     if query["lon_min"] < -180.0 or query["lon_max"] > 180.0:
@@ -1588,13 +1604,10 @@ def render_2d_distribution_map(df_plot, query, viz, plate_boundary_df=None):
     fig_map.update_traces(
         marker=dict(size=df_map["MagnitudeMarkerSize"].tolist())
     )
-    map_mode_for_style = {
-        "標準": "Standard",
-        "衛星画像": "Satellite",
-        "海底地形（海域）": "Bathymetry (Sea)",
-        "等高線（国土地理院）": "Contour (GSI)",
-    }[map_mode]
     fig_map = envgeo_utils.apply_map_style(fig_map, map_mode_for_style)
+    if _eff_57 == "Coastline (offline)":
+        envgeo_utils.add_coastline_overlay(fig_map)
+        envgeo_utils.add_graticule_overlay(fig_map)
     fig_map.update_layout(
         coloraxis_colorbar=dict(
             title=viz["color_label"],
@@ -1825,7 +1838,11 @@ def render_cross_section_location_map(
         )
     )
 
+    _eff_57_loc, _fell_57_loc = envgeo_utils.resolve_map_mode("Standard")
     fig_location = envgeo_utils.apply_map_style(fig_location, "Standard")
+    if _eff_57_loc == "Coastline (offline)":
+        envgeo_utils.add_coastline_overlay(fig_location)
+        envgeo_utils.add_graticule_overlay(fig_location)
     fig_location = add_plate_boundaries_to_2d(fig_location, plate_boundary_df)
     fig_location.update_layout(
         height=420,
@@ -2274,7 +2291,11 @@ def render_jma_nied_comparison_page(df_plot, query, plate_boundary_df=None):
         opacity=0.68,
         height=520,
     )
+    _eff_57_cmp, _fell_57_cmp = envgeo_utils.resolve_map_mode("Standard")
     fig_compare = envgeo_utils.apply_map_style(fig_compare, "Standard")
+    if _eff_57_cmp == "Coastline (offline)":
+        envgeo_utils.add_coastline_overlay(fig_compare)
+        envgeo_utils.add_graticule_overlay(fig_compare)
     fig_compare.update_layout(
         mapbox=dict(center=dict(lat=center_lat, lon=center_lon), zoom=auto_zoom),
         margin=dict(l=0, r=0, t=0, b=0),

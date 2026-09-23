@@ -1,4 +1,4 @@
-# Advanced 4D Visualizer Earthquake
+# Advanced 4D Visualizer
 
 The Advanced visualizer adds plate boundaries, a user-defined cross-section, a depth profile, a time histogram, and JMA/NIED comparison to the 3D/4D and 2D views.
 
@@ -10,7 +10,7 @@ The Advanced visualizer adds plate boundaries, a user-defined cross-section, a d
 
 - `4D/3D Map`: 3D/4D hypocenter distribution.
 - `2D Map`: geographic distribution.
-- `Cross-section`: user-defined A-B section and depth profile.
+- `Cross-section`: arbitrary A-B section and depth profile.
 - `Time Histogram`: event counts through time.
 - `Comparison`: uploaded external catalog compared with USGS.
 - `Data(CSV)`: USGS catalog table and CSV download.

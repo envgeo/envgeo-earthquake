@@ -901,10 +901,17 @@ def render_2d_distribution_map(df_plot, query, viz):
 
     map_mode = st.radio(
         "Map Style:",
-        ["Standard", "Satellite", "Bathymetry (Sea)", "Contour (GSI)"],
+        envgeo_utils.MAP_MODE_OPTIONS,
+        index=envgeo_utils.MAP_MODE_DEFAULT_INDEX,
         horizontal=True,
         key="eq_map_style",
     )
+    _eff_54, _fell_54 = envgeo_utils.resolve_map_mode(map_mode)
+    if _fell_54:
+        st.warning(envgeo_utils.OFFLINE_FALLBACK_WARNING)
+        st.caption(f"Map style: Coastline (offline)  ← {map_mode} fell back (network unreachable)")
+    else:
+        st.caption(f"Map style: {_eff_54}")
 
     lon_center_hint = None
     if query["lon_min"] < -180.0 or query["lon_max"] > 180.0:
@@ -935,6 +942,9 @@ def render_2d_distribution_map(df_plot, query, viz):
         marker=dict(size=df_map["MagnitudeMarkerSize"].tolist())
     )
     fig_map = envgeo_utils.apply_map_style(fig_map, map_mode)
+    if _eff_54 == "Coastline (offline)":
+        envgeo_utils.add_coastline_overlay(fig_map)
+        envgeo_utils.add_graticule_overlay(fig_map)
     fig_map.update_layout(
         coloraxis_colorbar=dict(
             title=viz["color_label"],

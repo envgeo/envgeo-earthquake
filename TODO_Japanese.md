@@ -16,6 +16,7 @@
 ## 直近の作業
 
 - [ ] Plotly 5.24を検証済み基準として、Python 3.10-3.12 / Streamlit 1.42-1.63互換の0.3.2について残りの画面確認を完了し、その後に公開を判断する。
+- [ ] 別途設計レビュー後、50m／110m海岸線CSVとキャッシュ読込を`envgeo-core`へ集約する。SeawaterとEarthquakeの両方で読込・画面確認が独立して合格するまで、各アプリ内のCSVを維持する。
   - [x] `requirements.txt`でStreamlit 1.42-1.63を許容し、新規デプロイでは1.63が選択される設定へ更新する。
   - [x] Streamlit 1.63の Session State / `value=` 二重指定警告を断面図入力（page 55・57）で解消: ウィジェット直前でSession Stateを初期化し、`value=` 引数を削除。
   - [x] Advancedページ（page 55・57）にフォーム上部の取得ボタンを追加（seawaterパターンに準拠）: キャプション直下に上部ボタン（ラベルに `!` なし）、フォーム末尾に下部ボタン（ラベルに `!` / `！` あり）、両ボタンとも `use_container_width=True`。

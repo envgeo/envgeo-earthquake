@@ -26,6 +26,9 @@ release notes, and major development policies in both English and Japanese.
   - [x] Add top Fetch/Update button to Advanced pages (55, 57) following the seawater pattern: top button after caption (label without `!`), bottom button at form end (label with `!`), both `use_container_width=True`.
   - [x] Apply the same top/bottom button pattern to Simple pages (54, 56). Added missing caption to page 54. All four pages now consistent.
 - [ ] Migrate Mapbox traces to the MapLibre APIs available in Plotly 5.24, then test the same implementation with Plotly 6.7 and 7.1.
+- [ ] After a separate design review, move the shared 50m/110m coastline CSV
+  assets and cached loader into `envgeo-core`. Retain local copies until both
+  Seawater and Earthquake independently pass loader and visual checks.
 - [ ] Add a Python 3.10 / Streamlit 1.63 / Plotly 7 cross-environment test before claiming the full supported-version matrix is verified.
 - [ ] Apply the verified low-risk fixes from the 2026-09-17 external review before larger refactoring.
   - [x] NaN-safe filter bounds: add `.dropna()` to slider min/max calculations (4 locations).

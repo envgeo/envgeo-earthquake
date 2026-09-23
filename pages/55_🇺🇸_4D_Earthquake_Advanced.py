@@ -1571,10 +1571,17 @@ def render_2d_distribution_map(df_plot, query, viz, plate_boundary_df=None):
 
     map_mode = st.radio(
         "Map Style:",
-        ["Standard", "Satellite", "Bathymetry (Sea)", "Contour (GSI)"],
+        envgeo_utils.MAP_MODE_OPTIONS,
+        index=envgeo_utils.MAP_MODE_DEFAULT_INDEX,
         horizontal=True,
         key="eq_map_style",
     )
+    _eff_55, _fell_55 = envgeo_utils.resolve_map_mode(map_mode)
+    if _fell_55:
+        st.warning(envgeo_utils.OFFLINE_FALLBACK_WARNING)
+        st.caption(f"Map style: Coastline (offline)  ← {map_mode} fell back (network unreachable)")
+    else:
+        st.caption(f"Map style: {_eff_55}")
 
     lon_center_hint = None
     if query["lon_min"] < -180.0 or query["lon_max"] > 180.0:
@@ -1606,6 +1613,9 @@ def render_2d_distribution_map(df_plot, query, viz, plate_boundary_df=None):
         marker=dict(size=df_map["MagnitudeMarkerSize"].tolist())
     )
     fig_map = envgeo_utils.apply_map_style(fig_map, map_mode)
+    if _eff_55 == "Coastline (offline)":
+        envgeo_utils.add_coastline_overlay(fig_map)
+        envgeo_utils.add_graticule_overlay(fig_map)
     fig_map.update_layout(
         coloraxis_colorbar=dict(
             title=viz["color_label"],
@@ -1836,7 +1846,11 @@ def render_cross_section_location_map(
         )
     )
 
+    _eff_55_loc, _fell_55_loc = envgeo_utils.resolve_map_mode("Standard")
     fig_location = envgeo_utils.apply_map_style(fig_location, "Standard")
+    if _eff_55_loc == "Coastline (offline)":
+        envgeo_utils.add_coastline_overlay(fig_location)
+        envgeo_utils.add_graticule_overlay(fig_location)
     fig_location = add_plate_boundaries_to_2d(fig_location, plate_boundary_df)
     fig_location.update_layout(
         height=420,
@@ -2286,7 +2300,11 @@ def render_jma_nied_comparison_page(df_plot, query, plate_boundary_df=None):
         opacity=0.68,
         height=520,
     )
+    _eff_55_cmp, _fell_55_cmp = envgeo_utils.resolve_map_mode("Standard")
     fig_compare = envgeo_utils.apply_map_style(fig_compare, "Standard")
+    if _eff_55_cmp == "Coastline (offline)":
+        envgeo_utils.add_coastline_overlay(fig_compare)
+        envgeo_utils.add_graticule_overlay(fig_compare)
     fig_compare.update_layout(
         mapbox=dict(center=dict(lat=center_lat, lon=center_lon), zoom=auto_zoom),
         margin=dict(l=0, r=0, t=0, b=0),

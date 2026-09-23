@@ -896,10 +896,26 @@ def render_2d_distribution_map(df_plot, query, viz):
 
     map_mode = st.radio(
         "地図スタイル:",
-        ["標準", "衛星画像", "海底地形（海域）", "等高線（国土地理院）"],
+        ["海岸線", "標準", "衛星画像", "海底地形（海域）", "等高線（国土地理院）"],
+        index=1,  # "標準" をデフォルト
         horizontal=True,
         key="eq_map_style",
     )
+    _MAP_MODE_JA_TO_EN = {
+        "海岸線": "Coastline (offline)",
+        "標準": "Standard",
+        "衛星画像": "Satellite",
+        "海底地形（海域）": "Bathymetry (Sea)",
+        "等高線（国土地理院）": "Contour (GSI)",
+    }
+    map_mode_for_style = _MAP_MODE_JA_TO_EN[map_mode]
+    _eff_56, _fell_56 = envgeo_utils.resolve_map_mode(map_mode_for_style)
+    if _fell_56:
+        st.warning(envgeo_utils.OFFLINE_FALLBACK_WARNING)
+        st.caption(f"地図スタイル: 海岸線← {map_mode} 縮退 / fell back (network unreachable)")
+    else:
+        _EFF_LABEL_JA = {v: k for k, v in _MAP_MODE_JA_TO_EN.items()}
+        st.caption(f"地図スタイル: {_EFF_LABEL_JA.get(_eff_56, _eff_56)}")
 
     lon_center_hint = None
     if query["lon_min"] < -180.0 or query["lon_max"] > 180.0:
@@ -929,13 +945,10 @@ def render_2d_distribution_map(df_plot, query, viz):
     fig_map.update_traces(
         marker=dict(size=df_map["MagnitudeMarkerSize"].tolist())
     )
-    map_mode_for_style = {
-        "標準": "Standard",
-        "衛星画像": "Satellite",
-        "海底地形（海域）": "Bathymetry (Sea)",
-        "等高線（国土地理院）": "Contour (GSI)",
-    }[map_mode]
     fig_map = envgeo_utils.apply_map_style(fig_map, map_mode_for_style)
+    if _eff_56 == "Coastline (offline)":
+        envgeo_utils.add_coastline_overlay(fig_map)
+        envgeo_utils.add_graticule_overlay(fig_map)
     fig_map.update_layout(
         coloraxis_colorbar=dict(
             title=viz["color_label"],
