@@ -45,12 +45,18 @@ ignore/tracked-file exclusions, runtime references, common secret/private-key
 patterns, machine-specific absolute paths, symlinks, and Markdown links. It contains no
 inherited Seawater dataset checks and requires no bundled Seawater files.
 
+Four distribution-policy contracts keep the English and Japanese documents
+paired, preserve the source-only GitHub Release and Zenodo decision, record the
+initial PyPI/package exclusions, and require both READMEs to link the policy
+while retaining the local `streamlit run home.py` command.
+
 Four additional contracts ensure that bilingual Plotly camera guidance names
 Shift/Control/Option (Alt)/Command and appears before each main 3D chart.
 
-Recorded after the 2026-10-08 CI preparation: `178 passed, 0 skipped` in the
-available local pytest environment. The Python 3.10 / 3.12 GitHub jobs remain
-unverified until the workflow is copied, pushed, and completes on GitHub.
+Recorded after the 2026-10-08 distribution-policy update: `182 passed, 0 skipped`
+in the available local pytest environment. The most recent GitHub Actions run
+for commit `fe725ee` completed successfully for the Python 3.10 / 3.12 matrix;
+the four new documentation contracts await the next pushed CI run.
 
 Current limitations include interactive browser workflows, live-service end-to-end
 behavior, visual regression, varied JMA/NIED input schemas beyond the minimal retained contract, uncommon API failure cases,

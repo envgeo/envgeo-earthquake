@@ -47,6 +47,9 @@ In simple terms, each test is an automatic checklist item. For example:
 - Does the release candidate contain only approved content, exclude generated
   and private material, avoid secret values and machine-specific paths, use no
   symlinks, and retain valid Markdown links?
+- Do the paired distribution-policy documents preserve the source-only GitHub
+  Release and Zenodo decision, initial package exclusions, README links, and
+  local launch command?
 
 Run tests from the `earthquake_map_v030` directory:
 
@@ -65,5 +68,6 @@ coastlines/offline maps, and page-state recovery. Browser-level interaction,
 map rendering, and real-service end-to-end behavior still require separate
 confirmation.
 
-Recorded after the 2026-10-08 CI preparation: `178 passed, 0 skipped` locally.
-The GitHub Python 3.10/3.12 jobs remain unverified until the workflow is pushed.
+Recorded after the 2026-10-08 distribution-policy update: `182 passed, 0 skipped`
+locally. The GitHub Python 3.10/3.12 matrix passed for commit `fe725ee`; the
+four new policy contracts await the next pushed CI run.

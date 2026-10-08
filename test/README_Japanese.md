@@ -42,6 +42,8 @@
 - 日英Home / Simple / Advancedが例外なく起動し、主要見出しと上下取得buttonを維持するか。
 - 公開候補が許可対象だけで、生成物・private資料を除外し、secret実値・機械固有path・
   symlink・Markdown link欠損を含まないか。
+- 日英の配布方針文書が、source-only GitHub ReleaseとZenodoの決定、初回package化の
+  対象外、README link、local起動commandを維持しているか。
 
 `earthquake_map_v030`直下で次を実行します。
 
@@ -58,5 +60,6 @@ pytest -q
 海岸線・オフライン地図、page state復旧を保護します。browser操作、地図描画、
 実serviceを使うend-to-end動作は別途確認が必要です。
 
-2026-10-08のCI準備後のlocal記録: `178 passed, 0 skipped`。
-GitHubのPython 3.10/3.12 jobはworkflowをpushするまで未確認です。
+2026-10-08の配布方針更新後のlocal記録: `182 passed, 0 skipped`。
+commit `fe725ee`でGitHubのPython 3.10/3.12 matrix合格を確認済みで、今回追加した
+配布方針4 contractは次回push後のCI確認待ちです。

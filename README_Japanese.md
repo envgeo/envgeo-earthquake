@@ -330,6 +330,12 @@ pip install -r requirements.txt
 pip install -r requirements-dev.txt
 ```
 
+## 配布方式
+
+初回安定版は、アプリ一式をGitHub Releaseのsource archiveとして配布し、Zenodoへ保存します。
+初回DOI releaseではPyPI公開やinstall可能wheelへの再編を行いません。範囲と理由は
+[配布方針](docs/distribution_Japanese.md)に記録しています。
+
 ---
 
 ## Quick Start

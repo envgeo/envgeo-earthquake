@@ -124,13 +124,20 @@ python -c "import ast, pathlib; files=[pathlib.Path('home.py'), pathlib.Path('en
 - 公開候補textに実値形式のtoken・秘密鍵・credential URL・代入済みsecretがないこと。
 - user名を含むmacOS / Linux / Windows絶対local path、symlink、Markdown link欠損がないこと。
 
+### `test/test_distribution_policy.py`
+
+- 日英の配布方針文書が相互linkを持ち、初回DOIをsource-only GitHub Releaseとすること。
+- Zenodoとの関係と、PyPI・package化を初回DOIの対象外とする決定を維持すること。
+- 日英READMEが配布方針へlinkし、local起動commandを維持すること。
+
 4件の追加contractで、日英Plotly camera案内がShift / Control / Option（Alt） / Commandを記載し、
 各主要3D図の前にあることを保護する。
 
-2026-10-08のCI準備後、利用可能なlocal pytest環境で
-`178 passed, 0 skipped`を確認した。日英4pageの固定・連動方式、2D・3D・断面用profile、
+2026-10-08の配布方針更新後、利用可能なlocal pytest環境で
+`182 passed, 0 skipped`を確認した。日英4pageの固定・連動方式、2D・3D・断面用profile、
 M7:M4直径比約20:1と調整case、`0.2–10.0`の全体直接倍率を含み、Seawater datasetや実USGS通信には依存しない。
-Python 3.10 / 3.12のGitHub jobはworkflowをcopy・pushしてGitHub上で完了するまで未確認とする。
+commit `fe725ee`のGitHub Actions runで、Python 3.10 / 3.12 matrix全体の合格を確認済み。
+今回追加した配布方針4 contractは次回push後のCI確認待ちである。
 
 ## 現在の限界
 

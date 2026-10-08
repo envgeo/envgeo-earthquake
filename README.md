@@ -359,6 +359,13 @@ For local testing, install the development requirements:
 pip install -r requirements-dev.txt
 ```
 
+## Distribution
+
+The first stable release will be distributed as a complete source archive
+through GitHub Release and archived by Zenodo. It will not be published to PyPI
+or reorganized as an installable wheel for the initial DOI release. See the
+[distribution policy](docs/distribution.md) for the scope and rationale.
+
 ---
 
 ## Quick Start

@@ -22,6 +22,9 @@ detailed than the main README.
 - `testing.md` / `testing_Japanese.md`  
   Notes explaining the current pytest checks and their limits.
 
+- `distribution.md` / `distribution_Japanese.md`
+  Source-only GitHub Release policy, initial package exclusions, and Zenodo relationship.
+
 - `manual_Japanese/`
   Japanese user manual for EnvGeo-Earthquake, including quick start, USGS query settings,
   simple/advanced visualizer usage, JMA/NIED comparison, export, and use notes.
