@@ -1,6 +1,10 @@
-import os
+import io
+import json
 import sys
+from datetime import datetime
 from pathlib import Path
+from urllib.error import HTTPError, URLError
+from urllib.parse import parse_qs, urlparse
 
 import pandas as pd
 import pytest
@@ -12,68 +16,323 @@ sys.path.insert(0, str(ROOT))
 import envgeo_utils
 
 
-REQUIRED_COLUMNS = {
-    "Dataset",
-    "Latitude_degN",
+USGS_EXPECTED_COLUMNS = [
+    "EventID",
+    "DateTime_UTC",
+    "Time_UTC",
+    "Updated_UTC",
     "Longitude_degE",
+    "Latitude_degN",
+    "Depth_km",
     "Depth_m",
-    "Salinity",
-    "d18O",
-}
+    "Magnitude",
+    "MagnitudeType",
+    "Place",
+    "Tsunami",
+    "Alert",
+    "Status",
+    "URL",
+    "DetailURL",
+    "Dataset",
+    "reference",
+    "Year",
+    "Month",
+    "Day",
+    "Hour",
+    "Date",
+    "lat",
+    "lon",
+]
 
-INHERITED_SEAWATER_DATASET = ROOT / "dataset" / "01_ECS_JAPAN_SEA_Kodam_et_al_2024.xlsx"
-
-
-def skip_without_inherited_seawater_dataset():
-    if not INHERITED_SEAWATER_DATASET.exists():
-        pytest.skip("Inherited Seawater dataset files are not bundled with earthquake_map_v030.")
-
-
-# Verifies that the Japan Sea dataset can be loaded successfully and is not empty.
-# 日本海データセットが正常に読み込まれ、空でないことを確認する。
-def test_load_isotope_data_japan_sea_not_empty():
-    skip_without_inherited_seawater_dataset()
-    df = envgeo_utils.load_isotope_data(envgeo_utils.data_source_JAPAN_SEA)
-    assert isinstance(df, pd.DataFrame)
-    assert not df.empty
-
-
-# Verifies that the global dataset can be loaded successfully and is not empty.
-# グローバルデータセットが正常に読み込まれ、空でないことを確認する。
-def test_load_isotope_data_global_not_empty():
-    skip_without_inherited_seawater_dataset()
-    df = envgeo_utils.load_isotope_data(envgeo_utils.data_source_GLOBAL)
-    assert isinstance(df, pd.DataFrame)
-    assert not df.empty
+ACTIVE_VISUALIZER_PAGES = [
+    ROOT / "pages" / "54_🇺🇸_4D_Earthquake_Simple.py",
+    ROOT / "pages" / "55_🇺🇸_4D_Earthquake_Advanced.py",
+    ROOT / "pages" / "56_🇯🇵_4D_Earthquake_シンプル版.py",
+    ROOT / "pages" / "57_🇯🇵_4D_Earthquake_詳細版.py",
+]
 
 
-# Verifies that the loaded dataframe contains the core columns required by the application.
-# 読み込まれたデータフレームに、アプリの主要処理に必要な基本列が含まれていることを確認する。
-def test_load_isotope_data_has_required_columns():
-    skip_without_inherited_seawater_dataset()
-    df = envgeo_utils.load_isotope_data(envgeo_utils.data_source_AROUND_JAPAN)
-    assert REQUIRED_COLUMNS.issubset(df.columns)
+# -----------------------------------------------------------------------------
+# USGS GeoJSON contract tests / USGS GeoJSON契約テスト
+# -----------------------------------------------------------------------------
 
 
-# Verifies that the main analytical columns are converted to numeric types during data loading.
-# 主要な解析用列がデータ読み込み時に数値型へ正しく変換されていることを確認する。
-def test_load_isotope_data_numeric_columns_are_numeric():
-    skip_without_inherited_seawater_dataset()
-    df = envgeo_utils.load_isotope_data(envgeo_utils.data_source_GLOBAL)
+def test_build_usgs_query_url_includes_required_and_optional_parameters():
+    """Keep the complete API parameter mapping stable and inspectable."""
+    query_url = envgeo_utils.build_usgs_earthquake_query_url(
+        datetime(2026, 1, 2, 3, 4, 5),
+        datetime(2026, 1, 3, 6, 7, 8),
+        minmagnitude=1.2,
+        maxmagnitude=8.4,
+        mindepth=-5.0,
+        maxdepth=700.0,
+        minlatitude=20.0,
+        maxlatitude=50.0,
+        minlongitude=120.0,
+        maxlongitude=155.0,
+        limit=3210,
+        orderby="magnitude",
+    )
 
-    numeric_cols = [
-        "d18O",
-        "dD",
+    parsed = urlparse(query_url)
+    params = parse_qs(parsed.query)
+
+    assert f"{parsed.scheme}://{parsed.netloc}{parsed.path}" == (
+        envgeo_utils.USGS_EARTHQUAKE_QUERY_URL
+    )
+    assert params == {
+        "format": ["geojson"],
+        "eventtype": ["earthquake"],
+        "starttime": ["2026-01-02T03:04:05"],
+        "endtime": ["2026-01-03T06:07:08"],
+        "orderby": ["magnitude"],
+        "limit": ["3210"],
+        "minmagnitude": ["1.2"],
+        "maxmagnitude": ["8.4"],
+        "mindepth": ["-5.0"],
+        "maxdepth": ["700.0"],
+        "minlatitude": ["20.0"],
+        "maxlatitude": ["50.0"],
+        "minlongitude": ["120.0"],
+        "maxlongitude": ["155.0"],
+    }
+
+
+def test_build_usgs_query_url_omits_unset_optional_parameters():
+    query_url = envgeo_utils.build_usgs_earthquake_query_url(
+        "2026-04-01",
+        "2026-04-02",
+        minmagnitude=None,
+        maxmagnitude=float("nan"),
+    )
+    params = parse_qs(urlparse(query_url).query)
+
+    assert "minmagnitude" not in params
+    assert "maxmagnitude" not in params
+    assert params["format"] == ["geojson"]
+    assert params["eventtype"] == ["earthquake"]
+    assert params["limit"] == ["2000"]
+    assert params["orderby"] == ["time"]
+
+
+@pytest.mark.parametrize(
+    ("result_count", "requested_limit", "expected"),
+    [(1999, 2000, False), (2000, 2000, True), (2001, 2000, True)],
+)
+def test_usgs_result_limit_reached_boundary(result_count, requested_limit, expected):
+    assert envgeo_utils.usgs_result_limit_reached(result_count, requested_limit) is expected
+
+
+def test_all_visualizer_pages_use_shared_result_limit_warning_condition():
+    for path in ACTIVE_VISUALIZER_PAGES:
+        source = path.read_text(encoding="utf-8")
+        assert "envgeo_utils.usgs_result_limit_reached(" in source, path
+        assert "st.caption(" in source, path
+        assert "len(df_eq) >= query[\"limit\"]" not in source, path
+
+
+# One GeoJSON feature must produce one row, including incomplete features.
+# 欠損featureを含め、GeoJSONの1 featureを1行として保持する。
+def test_usgs_contract_preserves_one_row_per_feature():
+    payload = {
+        "features": [
+            {
+                "id": "complete-event",
+                "properties": {"time": 1_700_000_000_000, "mag": 4.2},
+                "geometry": {"coordinates": [140.0, 35.0, 10.0]},
+            },
+            {"id": "incomplete-event", "properties": None, "geometry": None},
+        ]
+    }
+
+    df = envgeo_utils.usgs_geojson_to_dataframe(payload)
+
+    assert len(df) == 2
+    assert df["EventID"].tolist() == ["complete-event", "incomplete-event"]
+    assert pd.isna(df.loc[1, "Longitude_degE"])
+    assert pd.isna(df.loc[1, "Magnitude"])
+
+
+# Column names and order are a stable interface for pages and CSV exports.
+# 列名と列順はpageとCSV出力が依存する安定interfaceとする。
+def test_usgs_contract_has_stable_column_order():
+    df = envgeo_utils.usgs_geojson_to_dataframe({"features": []})
+
+    assert list(df.columns) == USGS_EXPECTED_COLUMNS
+
+
+# Numeric strings are coerced to numbers and invalid values become missing.
+# 数値文字列は数値化し、不正値は欠損値とする。
+def test_usgs_contract_coerces_numeric_fields():
+    payload = {
+        "features": [
+            {
+                "id": "numeric-contract",
+                "properties": {
+                    "time": "1700000000000",
+                    "updated": "1700000010000",
+                    "mag": "not-a-number",
+                    "tsunami": "1",
+                },
+                "geometry": {"coordinates": ["142.5", "38.1", "34.2"]},
+            }
+        ]
+    }
+
+    df = envgeo_utils.usgs_geojson_to_dataframe(payload)
+
+    for column in (
         "Longitude_degE",
         "Latitude_degN",
+        "Depth_km",
         "Depth_m",
-        "Temperature_degC",
-        "Salinity",
-    ]
+        "Magnitude",
+        "Tsunami",
+    ):
+        assert is_numeric_dtype(df[column]), f"{column} is not numeric"
+    assert df.loc[0, "Depth_m"] == 34_200.0
+    assert df.loc[0, "Tsunami"] == 1
+    assert pd.isna(df.loc[0, "Magnitude"])
 
-    for col in numeric_cols:
-        assert col in df.columns
-        assert is_numeric_dtype(df[col]), f"{col} is not numeric"
+
+# Millisecond timestamps must produce UTC and calendar fields consistently.
+# millisecond時刻からUTCと暦列を一貫して生成する。
+def test_usgs_contract_derives_utc_calendar_fields():
+    payload = {
+        "features": [
+            {
+                "id": "time-contract",
+                "properties": {
+                    "time": 1_700_000_000_000,
+                    "updated": 1_700_000_010_000,
+                },
+                "geometry": {"coordinates": [142.5, 38.1, 34.2]},
+            }
+        ]
+    }
+
+    row = envgeo_utils.usgs_geojson_to_dataframe(payload).iloc[0]
+
+    assert row["DateTime_UTC"] == "2023-11-14 22:13:20 UTC"
+    assert row["Date"] == "2023-11-14"
+    assert (row["Year"], row["Month"], row["Day"], row["Hour"]) == (
+        2023,
+        11,
+        14,
+        22,
+    )
+
+
+# Malformed API JSON must become the RuntimeError handled by every page.
+# 不正なAPI JSONは、全pageが処理するRuntimeErrorへ変換する。
+def test_load_usgs_data_reports_invalid_json(monkeypatch):
+    monkeypatch.setattr(
+        envgeo_utils,
+        "urlopen",
+        lambda request, timeout: io.BytesIO(b"{not-json"),
+    )
+    envgeo_utils.load_usgs_earthquake_data.clear()
+
+    with pytest.raises(RuntimeError, match="invalid JSON"):
+        envgeo_utils.load_usgs_earthquake_data("2026-01-01", "2026-01-02")
+
+
+# A non-list features member must produce a readable error instead of AttributeError.
+# featuresがlistでないresponseは、AttributeErrorではなく読めるerrorにする。
+def test_load_usgs_data_rejects_unexpected_geojson(monkeypatch):
+    monkeypatch.setattr(
+        envgeo_utils,
+        "urlopen",
+        lambda request, timeout: io.BytesIO(b'{"features": {"unexpected": true}}'),
+    )
+    envgeo_utils.load_usgs_earthquake_data.clear()
+
+    with pytest.raises(RuntimeError, match="unexpected GeoJSON"):
+        envgeo_utils.load_usgs_earthquake_data("2026-01-03", "2026-01-04")
+
+
+# Successful, empty, and incomplete API payloads must pass through the same
+# network-facing loader used by all four pages.
+# 正常・空・欠損payloadを、4page共通のnetwork-facing loaderで確認する。
+@pytest.mark.parametrize(
+    ("payload", "expected_rows", "expected_event_id"),
+    [
+        (
+            {
+                "type": "FeatureCollection",
+                "features": [
+                    {
+                        "id": "normal-loader-event",
+                        "properties": {"time": 1_700_000_000_000, "mag": 4.8},
+                        "geometry": {"coordinates": [139.7, 35.6, 12.3]},
+                    }
+                ],
+            },
+            1,
+            "normal-loader-event",
+        ),
+        ({"type": "FeatureCollection", "features": []}, 0, None),
+        (
+            {
+                "type": "FeatureCollection",
+                "features": [
+                    {"id": "incomplete-loader-event", "properties": None, "geometry": None}
+                ],
+            },
+            1,
+            "incomplete-loader-event",
+        ),
+    ],
+)
+def test_load_usgs_data_handles_valid_payload_variants(
+    monkeypatch, payload, expected_rows, expected_event_id
+):
+    encoded = json.dumps(payload).encode("utf-8")
+    monkeypatch.setattr(
+        envgeo_utils,
+        "urlopen",
+        lambda request, timeout: io.BytesIO(encoded),
+    )
+    envgeo_utils.load_usgs_earthquake_data.clear()
+
+    df = envgeo_utils.load_usgs_earthquake_data("2026-02-01", "2026-02-02")
+
+    assert len(df) == expected_rows
+    assert df.attrs["query_url"].startswith(envgeo_utils.USGS_EARTHQUAKE_QUERY_URL)
+    if expected_event_id is not None:
+        assert df.loc[0, "EventID"] == expected_event_id
+
+
+# Transport failures must become the RuntimeError already handled by every page.
+# 通信失敗は全pageが処理済みのRuntimeErrorへ変換する。
+@pytest.mark.parametrize(
+    ("transport_error", "message"),
+    [
+        (
+            HTTPError(
+                envgeo_utils.USGS_EARTHQUAKE_QUERY_URL,
+                503,
+                "Service Unavailable",
+                hdrs=None,
+                fp=None,
+            ),
+            r"USGS API error \(503\): Service Unavailable",
+        ),
+        (URLError("temporary DNS failure"), "USGS API connection error"),
+        (TimeoutError("timed out"), "USGS API request timed out"),
+    ],
+)
+def test_load_usgs_data_converts_transport_failures(
+    monkeypatch, transport_error, message
+):
+    def raise_transport_error(request, timeout):
+        raise transport_error
+
+    monkeypatch.setattr(envgeo_utils, "urlopen", raise_transport_error)
+    envgeo_utils.load_usgs_earthquake_data.clear()
+
+    with pytest.raises(RuntimeError, match=message):
+        envgeo_utils.load_usgs_earthquake_data("2026-03-01", "2026-03-02")
 
 
 # Verifies that a blank separator row is inserted when observation groups change.

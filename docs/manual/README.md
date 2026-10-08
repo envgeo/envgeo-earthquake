@@ -32,3 +32,10 @@ EnvGeo-Earthquake is a Streamlit app for exploring earthquake hypocenter catalog
 - `pages/54_🇺🇸_4D_Earthquake_Simple.py`
 - `pages/55_🇺🇸_4D_Earthquake_Advanced.py`
 
+## Maintainer Documentation
+
+The user manual intentionally contains only public workflows. Maintainers and
+future development sessions should begin with
+[`PROJECT_STATUS.md`](../../PROJECT_STATUS.md), then read the latest
+[`work_log_English.md`](../work_log_English.md) entry. The documentation-update procedure is in
+[`development_workflow.md`](../development_workflow.md).

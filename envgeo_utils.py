@@ -12,6 +12,83 @@ APP_VERSION_DATE = "2026-09-22"
 version = APP_VERSION
 
 
+# --- Earthquake sources and citations / 地震データの出典と引用 ---
+# Keep authoritative wording in one Earthquake-local module so bilingual pages
+# remain aligned without adding a dependency on Seawater or a shared core.
+# 日英ページの表記を揃えるためEarthquake内の1か所で管理し、Seawater/Core依存は追加しない。
+USGS_EVENT_API_URL = "https://earthquake.usgs.gov/fdsnws/event/1/"
+USGS_COMCAT_CITATION_URL = "https://www.fdsn.org/datacenters/detail/USGS/"
+USGS_PLATE_BOUNDARY_SERVICE_URL = (
+    "https://earthquake.usgs.gov/arcgis/rest/services/eq/map_plateboundaries/MapServer"
+)
+USGS_SEISMICITY_MAP_SERIES_URL = "https://earthquake.usgs.gov/earthquakes/byregion/"
+USGS_CATALOG_CITATION = (
+    "U.S. Geological Survey. (2017). Advanced National Seismic System (ANSS) "
+    "Comprehensive Catalog. U.S. Geological Survey. "
+    "https://doi.org/10.5066/F7MS3QZH"
+)
+BIRD_PLATE_BOUNDARY_CITATION = (
+    "Bird, P. (2003). An updated digital model of plate boundaries. "
+    "Geochemistry, Geophysics, Geosystems, 4(3), 52 pp. "
+    "https://doi.org/10.1029/2001GC000252"
+)
+DEMETS_PLATE_MOTION_CITATION = (
+    "DeMets, C., Gordon, R. G., & Argus, D. F. (2010). Geologically current "
+    "plate motions. Geophysical Journal International, 181, 1–80. "
+    "https://doi.org/10.1111/j.1365-246X.2009.04491.x"
+)
+
+# --- JMA/NIED use and redistribution references / JMA・NIED利用・再配布情報 ---
+# These references document user responsibilities for optional uploaded data;
+# the app does not acquire or redistribute these catalogs.
+# 任意upload dataの利用者責任を示す参照であり、app自身はcatalogを取得・再配布しない。
+JMA_WEBSITE_TERMS_URL = "https://www.jma.go.jp/jma/en/copyright.html"
+JMA_BULLETIN_URL = "https://www.data.jma.go.jp/eqev/data/bulletin/index_e.html"
+JMA_BULLETIN_USAGE_URL = (
+    "https://www.data.jma.go.jp/eqev/data/bulletin/readme_j.html"
+)
+NIED_HINET_DATA_GUIDANCE_URL = "https://www.hinet.bosai.go.jp/about_data/?LANG=en"
+NIED_HINET_FAQ_URL = "https://www.hinet.bosai.go.jp/faq/?LANG=en"
+NIED_HINET_CITATION = (
+    "National Research Institute for Earth Science and Disaster Resilience "
+    "(2019), NIED Hi-net, National Research Institute for Earth Science and "
+    "Disaster Resilience, https://doi.org/10.17598/NIED.0003"
+)
+JMA_NIED_TERMS_VERIFIED_DATE = "2026-10-08"
+
+# --- Online map sources and attribution / オンライン地図の出典と表示 ---
+# Keep the runtime credits aligned with provider guidance without changing the
+# selected tiles. / 選択tileは変えず、表示creditを提供元案内と一致させる。
+OSM_COPYRIGHT_URL = "https://www.openstreetmap.org/copyright"
+OSM_TILE_POLICY_URL = "https://operations.osmfoundation.org/policies/tiles/"
+USGS_IMAGERY_SERVICE_URL = (
+    "https://basemap.nationalmap.gov/arcgis/rest/services/"
+    "USGSImageryOnly/MapServer"
+)
+USGS_IMAGERY_TILE_URL = f"{USGS_IMAGERY_SERVICE_URL}/tile/{{z}}/{{y}}/{{x}}"
+USGS_IMAGERY_ATTRIBUTION = "USDA, USGS The National Map: Orthoimagery"
+ESRI_OCEAN_SERVICE_URL = (
+    "https://services.arcgisonline.com/arcgis/rest/services/"
+    "Ocean/World_Ocean_Base/MapServer"
+)
+ESRI_OCEAN_TILE_URL = f"{ESRI_OCEAN_SERVICE_URL}/tile/{{z}}/{{y}}/{{x}}"
+ESRI_OCEAN_ATTRIBUTION = (
+    "Sources: Esri, GEBCO, NOAA, National Geographic, DeLorme, HERE, "
+    "Geonames.org, and other contributors"
+)
+ESRI_BASEMAP_ATTRIBUTION_URL = (
+    "https://support.esri.com/en-us/knowledge-base/"
+    "what-is-the-correct-way-to-cite-an-arcgis-online-basema-000012040"
+)
+GSI_TILE_LIST_URL = "https://maps.gsi.go.jp/development/ichiran.html"
+GSI_TERMS_URL = "https://maps.gsi.go.jp/help/termsofuse.html"
+GSI_STANDARD_TILE_URL = "https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png"
+GSI_ATTRIBUTION_HTML = (
+    '<a href="https://maps.gsi.go.jp/development/ichiran.html">国土地理院</a>'
+)
+MAP_ATTRIBUTION_VERIFIED_DATE = "2026-10-08"
+
+
 import pandas as pd
 import streamlit as st
 import numpy as np
@@ -35,9 +112,16 @@ warnings.filterwarnings("ignore", category=RuntimeWarning, module="shapely")
 warnings.filterwarnings("ignore", message="invalid value encountered in") # メッセージ指定でも念押し
 
 
+# --- Project-local assets / プロジェクト内アセット ---
+# Resolve bundled files from this module, never from the process working directory.
+# 同梱ファイルはprocessのcurrent directoryではなく、このmoduleの位置から解決する。
+PROJECT_ROOT = Path(__file__).resolve().parent
+COASTLINE_DIR = PROJECT_ROOT / "coastline"
+
+
 """
 ##############################################################################
-# PANDAS CONFIGURATION: Optimized Memory Management
+# Pandas compatibility and memory settings / Pandas互換性とメモリ設定
 ##############################################################################
 """
 
@@ -146,7 +230,7 @@ configure_pandas_compatibility()
 
 """
 ##############################################################################
-# --- 0. Common definitions for dataset ---
+# --- 0. Data-source definitions / データソース定義 ---
 ##############################################################################
 """
 
@@ -169,16 +253,16 @@ DATA_SOURCES = [
 
 # DATA ATTRIBUTION & CITATIONS (For UI Display) / データ出典と引用表示
 
-# --- Japan Sea: Samples analyzed by T. Ishimura using unified methods/standards ---
-# Kodama et al.(2024) + upcoming reports
+# --- Japan Sea source / 日本海データソース ---
+# Samples analyzed with unified methods and standards / 統一手法・標準で分析した試料
 refs_JAPAN_SEA= ':blue[Data source:]  Kodama et al. (2024)' # To be updated
 
-# --- Around Japan: Regional compilation ---
-# Kodama et al.(2024) + around Japan 
+# --- Around-Japan regional compilation / 日本周辺の地域統合 ---
+# Kodama et al. (2024) and regional reports / Kodama et al. (2024)と地域文献
 refs_AROUND_JAPAN = ':blue[Data source:]Kodama et al. (2024), Yamamoto et al. (2001), Sakamoto et al. (2019), Kodaira et al. (2016), Horikawa et al. (2023).'
 
-# --- Global: Comprehensive integration of international databases ---
-# NASA GISS + CoralHydro2k + recent regional reports
+# --- Global source integration / 全球データソースの統合 ---
+# NASA GISS, CoralHydro2k, and recent reports / NASA GISS、CoralHydro2k、最近の文献
 refs_GLOBAL = ':blue[Data source:] Kodama et al. (2024), Yamamoto et al. (2001), Sakamoto et al. (2019), Kodaira et al. (2016), Horikawa et al. (2023).\
                 Sakamoto et al. (2022).\
                 :blue[Integrated with:] NASA GISS Global Seawater d18O Database (Jan 23, 2025)\
@@ -190,153 +274,9 @@ refs_USGS_EARTHQUAKE = ':gray[Source: USGS Earthquake Catalog]'
 
 """
 ##############################################################################
-# --- 1. Load main dataset ---
-# Cache isotope data for rapid access (Japan/Global)
-##############################################################################
-"""
-@st.cache_data
-def load_isotope_data(ref_data, sheet_num=0): 
-    """
-    Load isotope datasets based on the selected reference source.
-    Results are cached to ensure near-instantaneous retrieval on subsequent calls.
-    Args:
-        ref_data (str): Identifier for the data source (e.g., Japan Sea, Global).
-        sheet_num (int): Index of the Excel sheet to load. Defaults to 0.
-    Returns:
-        pd.DataFrame: Loaded dataset.
-    """
-
-    
-    # Select the source file by dataset / データセットに応じて読み込みファイルを選択
-    #############################################################
-    # Excel FIle
-    #############################################################
-    
-    # ECS-Japan Sea
-    file_01 = 'dataset/01_ECS_JAPAN_SEA_Kodam_et_al_2024.xlsx'
-    # around Japan
-    file_02 = 'dataset/11_AROUND_JAPAN_PUB_20260305.xlsx'
-    
-    # Global
-    file_03 = 'dataset/71_GLOBA_NASA_20260226.xlsx'
-    file_04 = 'dataset/71_GLOBAL_Atwood_et_al_2026.xlsx' 
-    file_05 = 'dataset/72_GLOBAL_RECENT_REPORTS_20260302.xlsx'
-    
-    # Reserved for unpublished user data / 未公表ユーザーデータ用
-    file_unpub_91 = 'dataset/91_USER_UPLOAD_UNPUB.xlsx'
-    # file_unpub_91 = 'dataset/91_AROUND_JAPAN_UNPUB_20260228.xlsx'
-    # file_unpub_91 = 'dataset/91_AROUND_JAPAN_UNPUB_20260314_SGW.xlsx'
-    
-    
-    #########################################################################
-    # DATA INGESTION & CATEGORIZATION
-    # Define 'Dataset' column for UI filtering.
-    # Note: 'Dataset' refers to the UI category, not necessarily the original source.
-    #########################################################################
-    df1 = pd.read_excel(file_01)
-    df1['Dataset'] = 'Around Japan'
-    
-    df2 = pd.read_excel(file_02)
-    df2['Dataset'] = 'Around Japan'
-    
-    df3 = pd.read_excel(file_03)
-    df3['Dataset'] = 'Global (NASA GISS)'
-    
-    df4 = pd.read_excel(file_04)
-    df4['Dataset'] = 'Global (CoralHydro2k)'
-    
-    df5 = pd.read_excel(file_05)
-    df5['Dataset'] = 'Global (other reports)'
-    
-    df_unpub_91 = pd.read_excel(file_unpub_91)
-    df_unpub_91['Dataset'] = 'Unpublished dataset'
-
-
-
-
-    #########################################################################
-    # DATA SOURCE INTEGRATION: Toggle Public DB vs. User Data inclusion
-    # This section manages the merging of standardized datasets with custom 
-    # user inputs via manual configuration.
-    #########################################################################
-
-    """ public """
-
-    # if ref_data == data_source_JAPAN_SEA:  
-    #     df =  pd.concat([df1], ignore_index=True)
-        
-    # elif ref_data == data_source_AROUND_JAPAN:  
-    #     df = pd.concat([df1, df2], ignore_index=True)
-        
-        
-    # elif ref_data == data_source_GLOBAL:  
-    #     df = pd.concat([df1, df2,df3,df4, df5], ignore_index=True)
-        
-    # else:
-    #     return pd.DataFrame() # Return empty DF as fallback
-  
-
-
-    
-    """  including user dataset """
-    
-    if ref_data == data_source_JAPAN_SEA:  
-        df =  pd.concat([df1,df_unpub_91], ignore_index=True)
-        
-    elif ref_data == data_source_AROUND_JAPAN:  
-        df = pd.concat([df1, df2, df_unpub_91], ignore_index=True)
-
-        
-    elif ref_data == data_source_GLOBAL: 
-        df = pd.concat([df1, df2,df3,df4, df5, df_unpub_91], ignore_index=True)
-        
-    else:
-        return pd.DataFrame()  # Return empty DF as fallback
-
-
-
-
-
-
-
-    #########################################################################
-    # DATA LOADING & CLEANING
-    # Update (2026/02/23): Enhanced compatibility for depth profiles
-    #########################################################################
-    try:
-        # Replace placeholders ('**') with NaN / プレースホルダ ('**') をNaNへ置換する
-        df = df.replace('**', np.nan)
-        
-        # Enforce numeric conversion for safety (applies to all datasets) / 安全のため数値列を明示的に数値化する
-        target_cols = ['d18O', 'dD', 'Longitude_degE', 'Latitude_degN', 
-                       'Depth_m', 'Temperature_degC', 'Salinity']
-        
-        for col in target_cols:
-            if col in df.columns:
-                # Use errors='coerce' to turn non-numeric values (e.g., whitespace) into NaN
-                df[col] = pd.to_numeric(df[col], errors='coerce')
-        
-        # Standardize categorical columns as strings / カテゴリ列を文字列として標準化する
-        str_cols = ['Station', 'Date', 'Cruise', "Transect", "reference"]
-        for col in str_cols:
-            if col in df.columns:
-                # Using None instead of an empty string facilitates gap detection in plots
-                df[col] = df[col].astype(str).replace('nan', None) 
-                
-        return df # Return full cleaned dataframe without dropping rows
-
-    except Exception as e:
-        # Display a detailed error message for troubleshooting / 詳細エラーを表示する
-        st.error(f"Error loading file: {e}")
-        return pd.DataFrame()
-
-
-
-"""
-##############################################################################
-# --- 2. LOAD COASTLINE DATA (Global or Japan) ---
-# Fetch geographic boundaries for mapping based on the selected data source.
-# Coastline data: derived from Natural Earth (public domain).
+# --- 1. Coastline loading / 海岸線データの読込 ---
+# Load map boundaries from bundled Natural Earth CSV data.
+# Natural Earth由来の同梱CSVから地図境界を読み込む。
 ##############################################################################
 """
 @st.cache_data
@@ -354,11 +294,7 @@ def load_coastline_data(ref_data, resolution="50m"):
         )
         return [], []
 
-    coastline_path = (
-        Path(__file__).resolve().parent
-        / "coastline"
-        / coastline_files[resolution]
-    )
+    coastline_path = COASTLINE_DIR / coastline_files[resolution]
 
     try:
         df_coast = pd.read_csv(coastline_path)
@@ -370,9 +306,9 @@ def load_coastline_data(ref_data, resolution="50m"):
 
 """
 ##############################################################################
-# --- 2b. LOAD USGS EARTHQUAKE CATALOG DATA ---
-# Fetch hypocenter data from the USGS FDSN Event Web Service and normalize it
-# into an EnvGeo-like dataframe for 4D mapping.
+# --- 2. USGS earthquake-catalog loading / USGS地震カタログの読込 ---
+# Fetch hypocenters from the USGS FDSN Event Web Service and normalize them.
+# USGS FDSN Event Web Serviceから震源を取得し、可視化用に標準化する。
 ##############################################################################
 """
 
@@ -404,6 +340,56 @@ def _optional_usgs_param(params, key, value):
     if isinstance(value, float) and math.isnan(value):
         return
     params[key] = value
+
+
+def build_usgs_earthquake_query_url(
+    starttime,
+    endtime,
+    minmagnitude=None,
+    maxmagnitude=None,
+    mindepth=None,
+    maxdepth=None,
+    minlatitude=None,
+    maxlatitude=None,
+    minlongitude=None,
+    maxlongitude=None,
+    limit=2000,
+    orderby="time",
+):
+    """Build the deterministic USGS FDSN Event query URL.
+
+    USGS FDSN Event query URLを実通信なしで再現可能に組み立てる。
+    """
+    params = {
+        "format": "geojson",
+        "eventtype": "earthquake",
+        "starttime": _format_usgs_datetime(starttime),
+        "endtime": _format_usgs_datetime(endtime),
+        "orderby": orderby,
+        "limit": int(limit),
+    }
+    optional_params = {
+        "minmagnitude": minmagnitude,
+        "maxmagnitude": maxmagnitude,
+        "mindepth": mindepth,
+        "maxdepth": maxdepth,
+        "minlatitude": minlatitude,
+        "maxlatitude": maxlatitude,
+        "minlongitude": minlongitude,
+        "maxlongitude": maxlongitude,
+    }
+    for key, value in optional_params.items():
+        _optional_usgs_param(params, key, value)
+
+    return f"{USGS_EARTHQUAKE_QUERY_URL}?{urlencode(params)}"
+
+
+def usgs_result_limit_reached(result_count, requested_limit):
+    """Return whether a result may be truncated at the requested limit.
+
+    取得行数が要求上限以上で、結果が途中までの可能性を示すべきか返す。
+    """
+    return int(result_count) >= int(requested_limit)
 
 
 def usgs_geojson_to_dataframe(payload):
@@ -498,29 +484,20 @@ def load_usgs_earthquake_data(
     """
     Fetch earthquake hypocenter data from the USGS API and return a dataframe.
     """
-    params = {
-        "format": "geojson",
-        "eventtype": "earthquake",
-        "starttime": _format_usgs_datetime(starttime),
-        "endtime": _format_usgs_datetime(endtime),
-        "orderby": orderby,
-        "limit": int(limit),
-    }
-
-    optional_params = {
-        "minmagnitude": minmagnitude,
-        "maxmagnitude": maxmagnitude,
-        "mindepth": mindepth,
-        "maxdepth": maxdepth,
-        "minlatitude": minlatitude,
-        "maxlatitude": maxlatitude,
-        "minlongitude": minlongitude,
-        "maxlongitude": maxlongitude,
-    }
-    for key, value in optional_params.items():
-        _optional_usgs_param(params, key, value)
-
-    query_url = f"{USGS_EARTHQUAKE_QUERY_URL}?{urlencode(params)}"
+    query_url = build_usgs_earthquake_query_url(
+        starttime,
+        endtime,
+        minmagnitude=minmagnitude,
+        maxmagnitude=maxmagnitude,
+        mindepth=mindepth,
+        maxdepth=maxdepth,
+        minlatitude=minlatitude,
+        maxlatitude=maxlatitude,
+        minlongitude=minlongitude,
+        maxlongitude=maxlongitude,
+        limit=limit,
+        orderby=orderby,
+    )
     request = Request(
         query_url,
         headers={"User-Agent": "EnvGeo-Earthquake visualizer"},
@@ -529,12 +506,17 @@ def load_usgs_earthquake_data(
     try:
         with urlopen(request, timeout=30) as response:
             payload = json.load(response)
+    except (json.JSONDecodeError, UnicodeDecodeError) as e:
+        raise RuntimeError("USGS API returned invalid JSON data.") from e
     except HTTPError as e:
         raise RuntimeError(f"USGS API error ({e.code}): {e.reason}") from e
     except URLError as e:
         raise RuntimeError(f"USGS API connection error: {e.reason}") from e
     except TimeoutError as e:
         raise RuntimeError("USGS API request timed out.") from e
+
+    if not isinstance(payload, dict) or not isinstance(payload.get("features"), list):
+        raise RuntimeError("USGS API returned an unexpected GeoJSON response.")
 
     df = usgs_geojson_to_dataframe(payload)
     df.attrs["query_url"] = query_url
@@ -545,8 +527,9 @@ def load_usgs_earthquake_data(
 
 """
 ##############################################################################
-# --- 3. UNIFIED LAYOUT CONFIGURATION ---
-# Apply consistent styling and region-specific perspectives to Plotly figures.
+# --- 3. Shared Plotly layout / 共通Plotlyレイアウト ---
+# Apply consistent styling and regional perspectives to Plotly figures.
+# Plotly図に共通スタイルと地域別の視点を適用する。
 ##############################################################################
 """
 
@@ -605,9 +588,9 @@ def apply_common_layout(fig, ref_data, z_min, z_max, x_range=None, y_range=None)
 
 """
 ##############################################################################
-# --- 4. DYNAMIC COLORSCALE SELECTION ---
-# Automatically apply depth-optimized colorscales when depth-related 
-# keywords (e.g., 'Depth_m') are detected in the data.
+# --- 4. Dynamic colourscale selection / 動的カラースケール選択 ---
+# Select a depth-optimized scale when depth-related fields are detected.
+# 深さ関連の列を検出した場合は、深度用のスケールを選択する。
 ##############################################################################
 """
 
@@ -653,8 +636,8 @@ def get_custom_colorscale(selected_item):
 
 """
 ##############################################################################
-# --- 5. MAP STYLE CONFIGURATION ---
-# Apply background tile layers to the Plotly Mapbox figure.
+# --- 5. Map-style configuration / 地図スタイル設定 ---
+# Apply background tiles to Plotly map figures. / Plotly地図に背景tileを適用する。
 ##############################################################################
 """
 
@@ -666,6 +649,8 @@ def apply_map_style(fig, map_mode):
     """
     
     if map_mode == "Standard":
+        # Plotly's built-in OSM style displays the OSM contributor credit.
+        # Plotly組込みOSM styleがOSM contributor creditを表示する。
         fig.update_layout(mapbox_style="open-street-map")
         
     
@@ -675,10 +660,8 @@ def apply_map_style(fig, map_mode):
             mapbox_layers=[{
                 "below": 'traces',
                 "sourcetype": "raster",
-                "source": [
-                    # USGS
-                    "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/{z}/{y}/{x}"],
-                "sourceattribution": "USGS"
+                "source": [USGS_IMAGERY_TILE_URL],
+                "sourceattribution": USGS_IMAGERY_ATTRIBUTION
             }]
         )
         
@@ -688,11 +671,8 @@ def apply_map_style(fig, map_mode):
             mapbox_layers=[{
                 "below": "traces",
                 "sourcetype": "raster",
-                "source": [
-                    # Esri World Ocean Base 
-                    "https://services.arcgisonline.com/arcgis/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}"
-                ],
-                "sourceattribution": "Tiles &copy; Esri &mdash; Sources: GEBCO, NOAA, CHS, OSU, UNH, CSUMB, National Geographic, DeLorme, NAVTEQ, and Esri"
+                "source": [ESRI_OCEAN_TILE_URL],
+                "sourceattribution": ESRI_OCEAN_ATTRIBUTION
             }]
         )
         
@@ -702,11 +682,8 @@ def apply_map_style(fig, map_mode):
             mapbox_layers=[{
                 "below": 'traces',
                 "sourcetype": "raster",
-                "source": [
-                    # Geospatial Information Authority of Japan (GSI) tiles: 
-                    # High-detail topographic data that scales dynamically.
-                    "https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png"],
-                "sourceattribution": "国土地理院 (GSI)"
+                "source": [GSI_STANDARD_TILE_URL],
+                "sourceattribution": GSI_ATTRIBUTION_HTML
             }]
         )
         
@@ -723,9 +700,9 @@ def apply_map_style(fig, map_mode):
 
 """
 ##############################################################################
-# --- 5b. OFFLINE MAP HELPERS ---
-# Connectivity check, automatic offline fallback, coastline and graticule
-# overlays for the "Coastline (offline)" mode.
+# --- 5b. Offline-map support / オフライン地図補助 ---
+# Check connectivity, fall back automatically, and draw coastlines/graticules.
+# 通信確認、自動的なオフライン縮退、海岸線・経緯線の描画を行う。
 ##############################################################################
 """
 
@@ -859,8 +836,8 @@ def add_graticule_overlay(fig, lat_step: int = 30, lon_step: int = 30) -> None:
 
 """
 ##############################################################################
-# --- 6. CACHE MANAGEMENT ---
-# Utility functions to manage and reset Streamlit's data cache.
+# --- 6. Cache management / cache管理 ---
+# Manage and reset Streamlit data caches. / Streamlitのデータcacheを管理・初期化する。
 ##############################################################################
 """
 
@@ -876,9 +853,9 @@ def clear_app_cache():
 
 """
 ##############################################################################
-# --- 7. DATA SEGMENTATION FOR DEPTH PROFILES ---
-# Group data by coordinates and date, then insert NaN rows to break 
-# line connections in 3D visualizations. CRITICAL STEP.
+# --- 7. Depth-profile segmentation / 深度プロファイルの分割 ---
+# Insert NaN rows between coordinate/date groups to break 3D line connections.
+# 座標・日付group間にNaN行を挿入し、3D線の誤接続を防ぐ。
 ##############################################################################
 """
 
@@ -927,8 +904,9 @@ def insert_gap_rows(df):
 
 """
 ##############################################################################
-# --- 8. DATA TABLE VISUALIZATION ---
-# Formats and displays the filtered dataframe within a Streamlit expander.
+# --- 8. Data-table display / データ表の表示 ---
+# Format and show filtered data in a Streamlit expander.
+# 抽出後のデータを整形し、Streamlit expanderに表示する。
 ##############################################################################
 """
 
@@ -1002,10 +980,9 @@ def display_isotope_table(df, title="Sidebar-filtered dataset (CSV)"):
 
 """
 ##############################################################################
-# --- 9. DATA FILTERING & STATISTICAL SUMMARY ---
-# Handle sidebar-driven data extraction and display selection metrics.
-# Note: Visual styling for figures is managed in the main script.
-# --- 図の調整はメインスクリプトに記載 ---
+# --- 9. Data filtering and statistical summary / データ抽出と統計要約 ---
+# Apply sidebar filters and show selection metrics; figure styling stays in pages.
+# sidebarの条件で抽出し、選択結果を表示する。図のスタイルは各pageで管理する。
 ##############################################################################
 """
 # ポイントは | df[col].isna() を加えることで、フィルタリング時に空白行を常に救い出す点
@@ -1135,18 +1112,6 @@ def sidebar_filter_and_display(df1, ref_data, data_source_JAPAN_SEA, data_source
             
     
   
-        ##########################
-        # Map of Transects in Kodama et al (2024)
-        ##########################
-        with st.expander("Area map: Kodama et al.(2024)", expanded=False):
-            st.write('Cruise tracks and study area (2015–2021)')
-            st.caption('Click top right to expand.')
-            st.image("data/sites_20230515.gif")
-
-
-          
-        
-                
         ##########################
         # Station filtering
         ##########################

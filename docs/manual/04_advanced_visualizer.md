@@ -15,6 +15,13 @@ The Advanced visualizer adds plate boundaries, a user-defined cross-section, a d
 - `Comparison`: uploaded external catalog compared with USGS.
 - `Data(CSV)`: USGS catalog table and CSV download.
 
+## 3D Camera Controls
+
+Drag inside the 3D figure to rotate it. Use the Plotly toolbar at the upper
+right to switch rotation, pan, zoom, or reset the camera. Holding `Shift`,
+`Control`, `Option` (`Alt`), or `Command` while dragging can change how the viewpoint or center
+moves; behavior varies by browser and operating system.
+
 ## Plate Boundaries
 
 Enable `Overlay plate boundaries` in the sidebar to add boundaries from the USGS Tectonic Plate Boundaries service to maps. Enable `Include microplates` when those additional boundaries are useful; it is enabled by default around Japan.
@@ -37,5 +44,12 @@ The histogram aggregates earthquakes over the selected period. Increase the numb
 
 ## Color and Marker Size
 
-Use `Colorbar variable` to switch between magnitude and hypocenter depth. Reduce marker scales when points overlap, or increase them for a small catalog.
-
+Use `Colorbar variable` to switch between magnitude and hypocenter depth. Use
+`Marker size mode` to switch all main 3D, 2D, and cross-section views between
+`Magnitude-linked` and `Fixed size`; magnitude-linked is the default. The
+`Magnitude contrast` slider sets the M7:M4 marker-diameter ratio from `1` to
+`30`, defaulting to `20`; it is disabled in fixed-size mode. This is
+a visual emphasis rather than a physical energy or rupture-area scale. The three
+marker-size sliders are direct overall multipliers from `0.2` to `10.0`, with
+`1.0` as the standard size and `10.0` producing ten times the unclipped pixel size. Reduce the scale when points overlap, or increase it for a small
+catalog.

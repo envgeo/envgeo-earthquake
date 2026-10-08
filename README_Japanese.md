@@ -9,6 +9,13 @@ EnvGeo-Earthquake は、研究・教育向けに地震の震源カタログを�
 
 **現在の開発バージョン:** 0.3.2（2026-09-22）
 
+実行時のバージョン情報は`envgeo_utils.APP_VERSION`と
+`envgeo_utils.APP_VERSION_DATE`の1か所で定義し、日英Homeと可視化ページは
+個別に文字列を再定義せず直接参照します。
+
+同梱の海岸線CSVとHome内READMEは、processのcurrent directoryではなく
+source fileの位置を基準に読み込みます。
+
 このアプリケーションは、**EnvGeo-Seawater**
 (https://envgeo.h.kyoto-u.ac.jp/sw_jpn/) の空間 3D/4D 可視化ワークフローを、
 地震カタログデータに応用したものです。EnvGeo-Seawater は、海洋学・海洋地球化学
@@ -20,6 +27,15 @@ EnvGeo-Earthquake は、研究・教育向けに地震の震源カタログを�
 
 画面キャプチャ付きユーザーマニュアル: [日本語](docs/manual_Japanese/README.md) | [English](docs/manual/README.md)
 
+Earthquakeの現状挙動を維持する最小カタログ検証方針は
+[日本語](docs/earthquake_validation_Japanese.md) / [English](docs/earthquake_validation.md)
+に記録しています。新しいcheckは、crash防止、明確なerror、利用者uploadの
+安全な読込みに必要な範囲に限定します。
+
+開発作業の引継ぎと現在の公開準備状況は
+[PROJECT_STATUS_Japanese.md](PROJECT_STATUS_Japanese.md) にまとめています。新しい作業セッションでは、
+このファイルと [docs/work_log.md](docs/work_log.md) の最新記録を最初に確認します。
+
 ---
 
 ## 概要
@@ -27,7 +43,7 @@ EnvGeo-Earthquake は、研究・教育向けに地震の震源カタログを�
 EnvGeo-Earthquake は、USGS Earthquake Catalog API から震源データを取得し、
 EnvGeo 形式の 2D、3D、4D、断面表示ワークフローで可視化します。
 
-- マグニチュードに応じてマーカーサイズを変えた 2D マップ
+- マグニチュード連動（既定）または固定サイズの 2D / 3D マップ
 - 深さ、マグニチュード、カラーバー制御を備えた 3D/4D 震源プロット
 - 任意の A-B 断面図と断面位置マップ
 - 深度頻度プロファイル
@@ -67,9 +83,12 @@ Streamlit アプリでは、`home.py` が概要、データ出典、使い方、
 - GeoJSON を用いた USGS Earthquake Catalog API へのアクセス
 - UTC 日時、マグニチュード、震源深さ、緯度、経度、並び順、最大イベント数によるフィルタ
 - メイン画面での「日本周辺」または「全球」表示の選択
-- 2D マップにおけるマグニチュード連動のマーカーサイズ
+- 2D・3D・Advanced断面表示でのマグニチュード連動（既定）または固定マーカーサイズと、
+  最大10倍の全体直接倍率調整。連動方式はM7:M4のmarker直径比を1:1–30:1で調整可能（既定20:1）
 - カラーバー変数として、マグニチュードまたは震源深さを選択可能
 - 経緯度の生値ではなくローカルな km 座標を用いた EnvGeo 形式の 3D/4D 表示
+- drag回転、平行移動・zoom・reset、Shift / Control / Option（Alt） / Commandとmouseによる
+  camera操作を案内する簡潔なPlotly説明
 - 最大 1,000 km までの深度軸スケーリング
 - USGS Tectonic Plate Boundaries service からのプレート境界オーバーレイ
 - 任意断面図と深度プロファイル機能
@@ -95,8 +114,15 @@ EnvGeo-Earthquake は、構成、用語、可視化ワークフローを EnvGeo-
 - 断面図と深度プロファイルの幾何処理
 - ユーザーアップロードデータの検証と比較表の正規化
 
+汎用的なinput safety helperは将来のCore候補にできますが、USGS catalog値の
+独自科学審査は現時点のEarthquakeまたはCoreの要件にしません。
+
 一方で、USGS カタログ取得、JMA/NIED 比較、震源用語、地震データ固有の注意事項は、
 他の EnvGeo アプリでも同じ構造が必要になるまでは Earthquake 側に残します。
+
+現在の公開準備段階では、EnvGeo-Earthquake を単独で実行可能な状態に保ち、
+EnvGeo-Seawater または将来の共通コアへの実行時依存は追加しません。詳細な境界と
+監査結果は [docs/publication_audit_2026-10-08_Japanese.md](docs/publication_audit_2026-10-08_Japanese.md) に記録しています。
 
 ---
 
@@ -132,6 +158,9 @@ USGS API ドキュメントでは、このサービスが FDSN Event Web Service
 > U.S. Geological Survey. (2017). Advanced National Seismic System (ANSS)
 > Comprehensive Catalog. U.S. Geological Survey.
 > https://doi.org/10.5066/F7MS3QZH
+
+同じcatalog引用文を`envgeo_utils.py`の1か所で定義し、日英Homeと4つの現行可視化pageが
+参照することで、言語版・画面間の表記ずれを防ぎます。
 
 追加の USGS 関連リンク:
 
@@ -195,9 +224,15 @@ USGS プレート境界サービスに接続できない場合、本アプリは
 
 ### JMA および NIED 比較データ
 
+これはAdvanced pageの任意機能で、主要なUSGS可視化workflowや最初の安定
+release/DOIには必要ありません。
+
 本アプリは JMA や NIED のサービスを自動的にスクレイピングしません。
 代わりに、利用者が取得・確認したカタログ表をアップロードして比較できる
 インターフェースを提供します。
+
+対応形式はCSV、TSV、TXT、新しいExcel形式の`.xlsx`です。古いbinary Excel形式の
+`.xls`は別のreader依存が必要で、現在の実行環境に含めないため対応形式として表示しません。
 
 関連する公式情報:
 
@@ -209,31 +244,58 @@ USGS プレート境界サービスに接続できない場合、本アプリは
   https://www.data.jma.go.jp/eqev/data/bulletin/data/format/fmthyp_e.html
 - NIED Hi-net data guidance  
   https://www.hinet.bosai.go.jp/about_data/?LANG=en
+- 気象庁website利用規約  
+  https://www.jma.go.jp/jma/kishou/info/coment.html
+- NIED Hi-net再配布Q&A  
+  https://www.hinet.bosai.go.jp/faq/?LANG=ja
 
 NIED Hi-net のガイダンスでは、自動震源カタログは速報的な報告であり、
 公式な地震情報については気象庁情報を参照するよう案内されています。
 また、JMA 一元化カタログは登録ユーザー向けに Hi-net Web サイトから利用可能であり、
 必要に応じて最終版の JMA Seismological Bulletin を使用することが推奨されています。
 
-JMA/NIED データをアップロードする利用者は、提供元ごとの利用条件、登録要件、謝辞要件、
-再配布ルールを確認する責任があります。
+JMA website contentは、原則として出典と、編集・加工した場合の表示が必要です。
+第三者の権利や個別sourceの条件も利用者が確認します。NIED Hi-netはdownloadしたdata・
+震源情報の再配布を禁止しています。Hi-net dataによる成果の公表では、提供機関の謝辞、
+NIED Hi-net DOIの引用、NIEDへの成果報告が必要です。Hi-netを通じて提供されるJMA、大学、
+その他機関のdataには、それぞれの提供元規則も適用されます。
+
+NIED Hi-net reference:
+
+> National Research Institute for Earth Science and Disaster Resilience (2019), NIED Hi-net, National Research Institute for Earth Science and Disaster Resilience, https://doi.org/10.17598/NIED.0003
+
+詳細は日英の責任記録
+[`docs/jma_nied_data_responsibilities_Japanese.md`](docs/jma_nied_data_responsibilities_Japanese.md)
+に整理しています。比較uploadをsource dataの再公開手段として使用しないでください。
+
+upload内容は現在のStreamlit sessionで読み、本アプリが意図的に永続的な
+アプリdata storeへ書き込むことはありません。
+JMA/NIED catalog fileはrepositoryや予定release archiveへ同梱しません。
 
 ### ベースマップと表示レイヤー
 
-本アプリでは、Plotly Mapbox レイヤーを通じて複数の地図背景を使用します。
+本アプリでは、Plotly Mapboxレイヤーを通じて複数の地図背景を使用します。
+以下の出典表示は2026-10-08に再確認しました。
 
-- 標準地図: CARTO ベースマップおよび OpenStreetMap データに基づく
-  Plotly/CARTO ベースマップスタイル。インタラクティブ地図レイヤー側で
-  attribution が扱われます。  
-  https://carto.com/basemaps  
-  https://www.openstreetmap.org/copyright
-- 衛星画像: USGS National Map imagery tiles  
+- 標準地図: Plotly組込みのOpenStreetMap標準raster styleです。インタラクティブ
+  レイヤーが`© OpenStreetMap contributors`を表示します。CARTO basemapは設定して
+  いません。OpenStreetMapの著作権・licenseとtile利用方針に従い、offline利用のための
+  一括downloadやprefetchは行わないでください。  
+  https://www.openstreetmap.org/copyright  
+  https://operations.osmfoundation.org/policies/tiles/
+- 衛星画像: USGS National Map imagery tiles。表示creditは
+  `USDA, USGS The National Map: Orthoimagery`です。service metadataではUSDA NAIPを
+  主なsourceとし、他のsource imageryを含む場合があると説明されています。  
   https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer
-- 海底地形図: Esri World Ocean Base tiles  
+- 海底地形図: Esri World Ocean Base tiles。表示creditは
+  `Sources: Esri, GEBCO, NOAA, National Geographic, DeLorme, HERE,
+  Geonames.org, and other contributors`です。航海・海上安全判断には使用しないで
+  ください。出版・静的出力ではEsriの最新案内を再確認してください。  
   https://services.arcgisonline.com/arcgis/rest/services/Ocean/World_Ocean_Base/MapServer  
-  出版や静的地図出力では、Esri の Ocean Basemap attribution guidance に従ってください。  
   https://support.esri.com/en-us/knowledge-base/what-is-the-correct-way-to-cite-an-arcgis-online-basema-000012040
-- 等高線・地形図: 国土地理院（GSI）タイル  
+- 等高線・地形図: 国土地理院の標準tile。表示creditは`国土地理院`です。本アプリは
+  realtime表示として利用します。静的な出版・再配布では最新の利用条件と必要手続きを
+  再確認してください。  
   https://maps.gsi.go.jp/development/ichiran.html  
   https://maps.gsi.go.jp/help/termsofuse.html
 
@@ -253,7 +315,9 @@ JMA/NIED データをアップロードする利用者は、提供元ごとの�
   利用者がアップロードした比較表のみを受け付けます。
 - 論文、図、印刷教材、静的出力で使う場合は、
   各タイル提供元の最新の利用条件と必要な attribution を再確認してください。
-- プロットに使用する海岸線データは Natural Earth のパブリックドメインベクターデータに由来します。
+- プロットに使用する海岸線データはNatural Earthのpublic-domain coastline v4.1.0に由来します。
+  file hash、保持中間workbookとの照合根拠、過去のraw download記録上の制約を含む
+  日英の[出典・利用条件記録](coastline/LICENSE_OR_SOURCE_Japanese.md)を参照してください。
 
 ---
 
@@ -366,10 +430,12 @@ df.attrs["query_url"]
   日本語版の JMA/NIED 比較機能を含む詳細版の地震カタログ探索ページです。
 
 - `coastline/`  
-  3D 参照オーバーレイ用の50m・110mローカル海岸線座標CSVファイルです。
+  参照overlay用のNatural Earth由来50m・110mローカル海岸線座標CSVと、
+  日英の出典・利用条件記録です。
 
 - `test/`  
-  ユーティリティの import、USGS GeoJSON 正規化、任意の継承データセット確認を行うローカルテストです。
+  utility import、USGS GeoJSON契約、海岸線、オフライン地図、page state復旧の
+  再現可能なtestです。
 
 - `requirements.txt`  
   Streamlit アプリ実行用の依存関係です。
@@ -383,9 +449,8 @@ df.attrs["query_url"]
 - `TODO.md`  
   当面の修正候補と、EnvGeo-Seawater との将来的な共通コア化候補を記録します。
 
-このプロジェクトは EnvGeo-Seawater から派生したため、レガシーな海水関連ディレクトリや
-ファイルがリポジトリに残っている場合があります。地震専用ページでは海洋化学データセットを
-必要としません。
+開発workspaceには継承したSeawater関連directoryやファイルが残る場合がありますが、
+公開対象からは除外します。Earthquakeページは海洋化学datasetを必要としません。
 
 ---
 

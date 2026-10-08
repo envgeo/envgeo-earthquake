@@ -8,6 +8,8 @@ release notes, and major development policies in both English and Japanese.
 
 ## Current Policy
 
+- Preserve current features and behavior; add only changes required for stable
+  operation, accurate documentation, testing, deployment, or release.
 - Keep the development workspace as the source of edits.
 - Copy only reviewed and tested changes to the Git clone before committing.
 - Update README, README_Japanese, Home update history, and `docs/` whenever user-facing behavior, wording, data sources, testing, or workflow changes.
@@ -20,6 +22,61 @@ release notes, and major development policies in both English and Japanese.
 
 ## Near-Term Tasks
 
+- [ ] Complete the standalone-publication gates recorded in `PROJECT_STATUS.md`
+  and `docs/publication_audit_2026-10-08.md` without modifying or depending on
+  EnvGeo-Seawater.
+  - [x] Remove or isolate inherited Seawater dataset loaders and unpublished
+    dataset references from the active Earthquake utility module. Completed in
+    the development folder; the public clone awaits a user-directed copy.
+  - [x] Replace four skip-only inherited Seawater tests with Earthquake contract tests.
+  - [x] Centralize runtime version metadata in `envgeo_utils.py` and enforce shared use across both Home pages and all four active visualizer pages.
+  - [x] Verify bundled coastline and bilingual Home README loading from a current working directory outside the project.
+  - [x] Remove legacy `.xls` from bilingual Advanced uploads while retaining and testing CSV, TSV, TXT, and `.xlsx` support.
+  - [x] Define a bilingual minimal validation policy that preserves current behavior and defers speculative validation features.
+  - [x] Audit current USGS failure paths; convert demonstrated malformed-JSON and invalid-`features` crashes into the existing page-handled `RuntimeError` path.
+  - [x] Audit the optional JMA/NIED upload: normal CSV, missing columns, and broken XLSX are handled safely in both languages. Retain without expansion; it is not a first-release/DOI gate.
+  - [ ] Add Python 3.10/3.12 GitHub Actions CI with no live-network requirement.
+  - [x] Add Natural Earth provenance for the bundled coastline CSV files,
+    including v4.1.0 derivation evidence, output hashes, and raw-download record limitations.
+  - [x] Centralize and synchronize the USGS/ANSS catalog and USGS plate-boundary
+    citations across bilingual Home, Simple, Advanced, README, and manual text.
+  - [x] Recheck online map attribution: confirm that Standard uses OpenStreetMap
+    rather than CARTO, and align USGS imagery, Esri Ocean, and GSI runtime credits
+    and bilingual guidance with provider sources.
+  - [x] Record JMA and NIED responsibilities separately: JMA source/processing
+    statements and third-party checks; NIED no-redistribution, provider
+    acknowledgement, DOI citation, registration, and result reporting.
+  - [x] Complete deterministic USGS loader coverage for normal, empty,
+    incomplete, malformed JSON/GeoJSON, HTTP error, timeout, and connection
+    failure without changing the existing page-handled error behavior.
+  - [x] Extract and test deterministic USGS query construction and the shared
+    result-limit boundary used by all four bilingual visualizer pages, without
+    changing warning text or display timing.
+  - [x] Smoke-test the retained optional comparison by executing the actual
+    upload helpers from both Advanced pages with one normal CSV and one
+    missing-required-columns CSV; keep aliases and schemas unchanged.
+  - [x] Test the actual plot-preparation helper in all four bilingual pages;
+    retain boundary coordinates and exclude missing, non-numeric, and
+    out-of-range USGS GeoJSON coordinates before plotting.
+  - [x] Test both Advanced plate-boundary loaders for two-layer success,
+    total/partial failure, malformed GeoJSON, Japan-only fallback, and accurate
+    partial-data warnings without live network access.
+  - [x] Add persistent AppTest startup coverage for bilingual Home and all four
+    active visualizer pages, including primary headings and paired fetch buttons.
+  - [x] Add portable repository-health tests for the release allowlist,
+    exclusions, secret/private-key patterns, machine-specific absolute paths,
+    symlinks, runtime references, and Markdown links.
+  - [x] Before Phase 5, add a bilingual fixed/magnitude-linked marker-size
+    switch (magnitude-linked by default), an adjustable M7:M4 diameter ratio,
+    and a direct overall scale up to 10 times
+    the standard size in the main 2D/3D and Advanced cross-section views, with
+    deterministic tests.
+  - [x] Add concise bilingual Plotly 3D camera guidance before the main chart
+    on all four visualizer pages, following the EnvGeo-Seawater wording and
+    covering Shift/Control/Option (Alt)/Command and browser/OS variation.
+  - [ ] Add `CITATION.cff`, release metadata, and public-release content checks.
+  - [x] Exclude `old/`, caches, OS files, scratch documents, and irrelevant data from the public release. Root-anchored ignore rules cover all development-only directories; the files remain in the development folder.
+  - [ ] Run and record bilingual Home/Simple/Advanced deployment smoke checks before tagging.
 - [ ] Complete the remaining visual checks for the 0.3.2 Python 3.10-3.12 / Streamlit 1.42-1.63 compatibility cycle with Plotly 5.24 as the verified baseline, then decide on a public release.
   - [x] Update `requirements.txt` to allow Streamlit 1.42-1.63; a fresh deployment resolves to 1.63.
   - [x] Resolve Streamlit 1.63 dual Session State / `value=` warning in cross-section inputs (pages 55, 57): initialize session state before widgets and remove `value=` arguments.
@@ -42,9 +99,11 @@ release notes, and major development policies in both English and Japanese.
 - [ ] Confirm Japanese and English page wording in the browser.
 - [ ] Add a small screenshot/manual QA checklist for Simple and Advanced pages.
 - [ ] Consider moving Region selection state handling into testable helper functions.
-- [ ] Expand tests for longitude wrapping, local km coordinates, and cross-section geometry.
-- [ ] Review JMA/NIED comparison upload wording and accepted column names.
-- [ ] Decide whether `old/`, `data/`, `__logo__/`, and image assets should be included in the public GitHub repository.
+- [x] Expand tests for longitude wrapping, dateline continuity/seams, local-km
+  coordinates, and bilingual Advanced cross-section geometry.
+- [x] Review JMA/NIED comparison upload wording and accepted columns. Keep the
+  current aliases/formats unchanged and classify the feature as optional.
+- [x] Decide whether `old/`, `data/`, `__logo__/`, and image assets should be included in the public GitHub repository. They are excluded by `docs/public_release_scope.md`; only manual screenshots are included.
 
 ## Documentation and Test Strategy
 
@@ -70,8 +129,8 @@ Testing policy:
 - Keep pure-function pytest tests as the primary check for scientific and
   spatial logic, and add persistent `streamlit.testing.v1.AppTest` tests for UI
   workflows.
-- Start AppTest coverage with Home plus the English/Japanese Simple and Advanced
-  pages. Confirm startup, region and hotspot controls, filter/application flow,
+- AppTest coverage now starts with bilingual Home plus the English/Japanese
+  Simple and Advanced pages. Continue with region and hotspot controls, filter/application flow,
   empty results, messages, downloads, and session state.
 - Mock USGS responses in automated tests. Cover successful, empty, malformed,
   timeout, rate-limit, and other API-failure responses without depending on the

@@ -9,6 +9,13 @@ hypocenter catalogs in research and education.
 
 **Current development version:** 0.3.2 (2026-09-22)
 
+The single runtime version source is `envgeo_utils.APP_VERSION` with
+`envgeo_utils.APP_VERSION_DATE`; active Home and visualizer pages read it
+directly instead of redefining version strings.
+
+Bundled coastline CSVs and the Home README views are resolved from source-file
+locations rather than the process working directory.
+
 This application adapts the spatial 3D/4D visualization workflow of
 **EnvGeo-Seawater** (https://envgeo.h.kyoto-u.ac.jp/sw_jpn/) to earthquake
 catalog data. EnvGeo-Seawater was developed for interactive visualization of
@@ -21,6 +28,15 @@ tsunami warning, hazard assessment, or disaster-response system.
 
 Illustrated user manuals: [English](docs/manual/README.md) | [Japanese](docs/manual_Japanese/README.md)
 
+The minimal, behavior-preserving catalog validation policy is documented in
+[English](docs/earthquake_validation.md) and
+[Japanese](docs/earthquake_validation_Japanese.md). It limits new checks to
+crash prevention, readable errors, and safe handling of user uploads.
+
+Development handoff and current release readiness:
+[PROJECT_STATUS.md](PROJECT_STATUS.md). New work sessions should read that file
+and the latest entry in [docs/work_log_English.md](docs/work_log_English.md) before editing.
+
 ---
 
 ## Overview
@@ -29,12 +45,12 @@ EnvGeo-Earthquake fetches earthquake hypocenter data from the USGS Earthquake
 Catalog API and visualizes the results through EnvGeo-style 2D, 3D, 4D, and
 section-based workflows:
 
-- 2D maps with marker size scaled by magnitude
+- 2D/3D maps with magnitude-linked (default) or fixed marker sizing
 - 3D/4D hypocenter plots with depth, magnitude, and colorbar controls
 - user-defined A-B cross-sections with a section-location map
 - depth-frequency profiles
 - time-series histograms
-- Japan-focused comparison with uploaded JMA/NIED catalog tables in the Advanced page
+- optional Japan-focused comparison with uploaded JMA/NIED catalog tables in the Advanced page
 - plate-boundary overlays from USGS where available
 
 The project is also used as a testbed for identifying which parts of the
@@ -75,10 +91,14 @@ Japanese versions of the earthquake visualization workflows:
 - filters for UTC date/time, magnitude, hypocenter depth, latitude, longitude,
   order, and maximum event count
 - main-screen region selection for Japan and surrounding area or global view
-- magnitude-scaled marker size on 2D maps
+- magnitude-linked (default) or fixed marker sizing, with direct scale controls
+  up to 10 times for 2D, 3D, and Advanced cross-section views; linked mode has
+  an adjustable visual M7:M4 marker-diameter ratio from 1:1 to 30:1 (default 20:1)
 - colorbar variable selection between magnitude and hypocenter depth
 - EnvGeo-style 3D/4D view using local kilometer coordinates so horizontal
   scale is more physically meaningful than raw degree axes
+- concise in-app Plotly guidance for drag rotation, pan/zoom/reset tools, and
+  Shift/Control/Option (Alt)/Command plus mouse camera operation
 - depth-axis scaling up to 1,000 km
 - plate-boundary overlays from the USGS Tectonic Plate Boundaries service
 - user-defined cross-section and depth-profile tools
@@ -106,10 +126,18 @@ shared EnvGeo core:
 - cross-section geometry and depth-profile workflows
 - user-upload validation and comparison-table normalization
 
+Generic input-safety helpers may later become Core candidates, but scientific
+review of USGS catalog values is not a current Earthquake or Core requirement.
+
 Earthquake-specific logic, such as USGS catalog queries, JMA/NIED comparison
 details, hypocenter terminology, and seismic-source limitations, should remain
 in the earthquake layer unless the same pattern is needed by other EnvGeo
 applications.
+
+During the current publication-readiness phase, EnvGeo-Earthquake must remain
+independently runnable and must not add a runtime dependency on EnvGeo-Seawater
+or a future shared core. The detailed boundary and audit record is maintained in
+[docs/publication_audit_2026-10-08.md](docs/publication_audit_2026-10-08.md).
 
 ---
 
@@ -145,6 +173,9 @@ Recommended catalog citation:
 > U.S. Geological Survey. (2017). Advanced National Seismic System (ANSS)
 > Comprehensive Catalog. U.S. Geological Survey.
 > https://doi.org/10.5066/F7MS3QZH
+
+The same catalog citation is defined once in `envgeo_utils.py` and reused by
+both Home pages and all four active visualizer pages to prevent bilingual drift.
 
 Additional USGS links:
 
@@ -212,9 +243,16 @@ Those fallback lines are visual guides only and are not a formal dataset.
 
 ### JMA and NIED comparison data
 
+This is an optional Advanced-page feature and is not required for the main USGS
+visualization workflow or the first stable release/DOI.
+
 The app does **not** automatically scrape JMA or NIED services. Instead, it
 provides a comparison interface where the user can upload a catalog table
 obtained and checked by the user.
+
+Supported upload formats are CSV, TSV, TXT, and modern Excel `.xlsx` files.
+The legacy binary Excel `.xls` format is intentionally not advertised because
+its separate reader dependency is not part of the runtime environment.
 
 Relevant official references:
 
@@ -226,6 +264,10 @@ Relevant official references:
   https://www.data.jma.go.jp/eqev/data/bulletin/data/format/fmthyp_e.html
 - NIED Hi-net data guidance  
   https://www.hinet.bosai.go.jp/about_data/?LANG=en
+- JMA website terms of use  
+  https://www.jma.go.jp/jma/en/copyright.html
+- NIED Hi-net redistribution FAQ  
+  https://www.hinet.bosai.go.jp/faq/?LANG=en
 
 NIED Hi-net guidance describes the automatic hypocenter catalog as a quick
 report and advises users to refer to official JMA earthquake information. It
@@ -233,27 +275,53 @@ also notes that the JMA unified catalog is available through the Hi-net website
 for registered users and recommends using the final JMA Seismological Bulletin
 where appropriate.
 
-Users are responsible for checking provider-specific terms, registration
-requirements, acknowledgement requirements, and redistribution rules for any
-JMA/NIED data they upload.
+JMA website content generally requires source credit and a statement when it
+has been edited or processed; users must also check third-party rights and any
+source-specific notice. NIED Hi-net prohibits redistribution of downloaded
+data and hypocenter information. Results derived from Hi-net data may be
+published only under its stated conditions, including provider acknowledgement,
+the NIED Hi-net DOI, and reporting results to NIED. Data contributed through
+Hi-net by JMA, universities, or other organizations remain subject to each
+provider's rules.
+
+NIED Hi-net reference:
+
+> National Research Institute for Earth Science and Disaster Resilience (2019), NIED Hi-net, National Research Institute for Earth Science and Disaster Resilience, https://doi.org/10.17598/NIED.0003
+
+The full bilingual responsibility record is in
+[`docs/jma_nied_data_responsibilities.md`](docs/jma_nied_data_responsibilities.md).
+Users must not use the comparison upload as a mechanism to republish source data.
+
+Uploaded contents are read for the current Streamlit session and are not
+intentionally written to a persistent application data store by this app.
+No JMA/NIED catalog file is bundled in the repository or planned release archive.
 
 ### Base maps and display layers
 
-The app uses several map background styles through Plotly Mapbox layers:
+The app uses several map background styles through Plotly Mapbox layers. The
+following attribution review was performed on 2026-10-08:
 
-- Standard map: Plotly/CARTO basemap style, based on CARTO basemaps and
-  OpenStreetMap data attribution handled by the interactive map layer  
-  https://carto.com/basemaps  
-  https://www.openstreetmap.org/copyright
-- Satellite map: USGS National Map imagery tiles  
+- Standard map: Plotly's built-in OpenStreetMap standard raster style. The
+  interactive layer displays `© OpenStreetMap contributors`. CARTO basemaps
+  are not configured. Follow the OpenStreetMap copyright/license and tile
+  usage policy; do not bulk-download or prefetch these tiles for offline use.  
+  https://www.openstreetmap.org/copyright  
+  https://operations.osmfoundation.org/policies/tiles/
+- Satellite map: USGS National Map imagery tiles. Runtime credit:
+  `USDA, USGS The National Map: Orthoimagery`. The service metadata notes that
+  the imagery includes USDA NAIP and may include other source imagery.  
   https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer
-- Bathymetry map: Esri World Ocean Base tiles  
-  https://services.arcgisonline.com/arcgis/rest/services/Ocean/World_Ocean_Base/MapServer
-  Esri's Ocean Basemap attribution guidance should be followed for publication
-  or static map exports.  
+- Bathymetry map: Esri World Ocean Base tiles. Runtime credit:
+  `Sources: Esri, GEBCO, NOAA, National Geographic, DeLorme, HERE,
+  Geonames.org, and other contributors`. This background is not for navigation
+  or safety at sea. Recheck Esri guidance for publication or static exports.  
+  https://services.arcgisonline.com/arcgis/rest/services/Ocean/World_Ocean_Base/MapServer  
   https://support.esri.com/en-us/knowledge-base/what-is-the-correct-way-to-cite-an-arcgis-online-basema-000012040
-- Contour/topographic map: Geospatial Information Authority of Japan (GSI) tiles  
-  https://maps.gsi.go.jp/development/ichiran.html
+- Contour/topographic map: Geospatial Information Authority of Japan (GSI)
+  standard tiles. Runtime credit: `国土地理院`. Real-time display is used here;
+  recheck the current GSI terms and any required procedure for static
+  publication or redistribution.  
+  https://maps.gsi.go.jp/development/ichiran.html  
   https://maps.gsi.go.jp/help/termsofuse.html
 
 
@@ -276,7 +344,10 @@ The following status was checked against official or provider pages on
   not scrape them; it only accepts user-uploaded comparison tables.
 - For papers, figures, printed handouts, or static
   exports, re-check each tile provider's current terms and required attribution.
-- Coastline data used for plotting were derived from Natural Earth public domain vector data.
+- Coastline data used for plotting were derived from Natural Earth public-domain
+  coastline v4.1.0. See the bilingual [source and terms record](coastline/LICENSE_OR_SOURCE.md)
+  for file hashes, retained intermediate-workbook evidence, and the limitations
+  of the historical raw-download record.
 
 ---
 
@@ -391,11 +462,12 @@ df.attrs["query_url"]
   Japanese advanced earthquake visualizer, including JMA/NIED comparison tools.
 
 - `coastline/`  
-  Local 50m and 110m coastline coordinate CSV files for 3D reference overlays.
+  Local 50m and 110m Natural Earth-derived coastline coordinate CSV files for
+  reference overlays, with bilingual source/terms records.
 
 - `test/`  
-  Local tests for utility imports, USGS GeoJSON normalization, and optional
-  inherited dataset checks.
+  Deterministic tests for utility imports, USGS GeoJSON contracts, coastlines,
+  offline maps, and page-state recovery.
 
 - `requirements.txt`  
   Runtime dependencies for the Streamlit app.
@@ -411,9 +483,9 @@ df.attrs["query_url"]
   Current short-term tasks and shared-core candidates for future alignment
   with EnvGeo-Seawater.
 
-Legacy seawater-related directories and files may remain in the repository
-because this project was adapted from EnvGeo-Seawater. The earthquake-specific
-pages do not require ocean chemistry datasets.
+Legacy Seawater-related directories and files may remain in the development
+workspace, but they are excluded from public contents. The Earthquake pages do
+not require ocean-chemistry datasets.
 
 ---
 

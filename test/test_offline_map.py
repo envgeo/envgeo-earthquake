@@ -180,6 +180,42 @@ class TestApplyMapStyleOffline:
 
 
 # ---------------------------------------------------------------------------
+# 3b. Online tile attribution / オンラインtileの出典表示
+# ---------------------------------------------------------------------------
+
+def test_online_map_styles_keep_verified_sources_and_attribution():
+    """Protect provider credits without making live tile requests."""
+    standard = _blank_mapbox_fig()
+    envgeo_utils.apply_map_style(standard, "Standard")
+    assert standard.layout.mapbox.style == "open-street-map"
+
+    expected = {
+        "Satellite": (
+            envgeo_utils.USGS_IMAGERY_TILE_URL,
+            envgeo_utils.USGS_IMAGERY_ATTRIBUTION,
+        ),
+        "Bathymetry (Sea)": (
+            envgeo_utils.ESRI_OCEAN_TILE_URL,
+            envgeo_utils.ESRI_OCEAN_ATTRIBUTION,
+        ),
+        "Contour (GSI)": (
+            envgeo_utils.GSI_STANDARD_TILE_URL,
+            envgeo_utils.GSI_ATTRIBUTION_HTML,
+        ),
+    }
+    for mode, (source, attribution) in expected.items():
+        fig = _blank_mapbox_fig()
+        envgeo_utils.apply_map_style(fig, mode)
+        layer = fig.layout.mapbox.layers[0]
+        assert layer.source[0] == source
+        assert layer.sourceattribution == attribution
+
+    assert "USDA, USGS" in envgeo_utils.USGS_IMAGERY_ATTRIBUTION
+    assert "other contributors" in envgeo_utils.ESRI_OCEAN_ATTRIBUTION
+    assert envgeo_utils.GSI_TILE_LIST_URL in envgeo_utils.GSI_ATTRIBUTION_HTML
+
+
+# ---------------------------------------------------------------------------
 # 4. add_coastline_overlay
 # ---------------------------------------------------------------------------
 

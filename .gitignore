@@ -21,6 +21,8 @@ env/
 venv/
 ENV/
 .streamlit/secrets.toml
+LOCAL_WORKSPACE.md
+LOCAL_WORKSPACE_Japanese.md
 
 # Test/cache outputs
 .pytest_cache/
@@ -56,5 +58,11 @@ ipython_config.py
 *.tmp
 *.temp
 
-# Local development notes
-docs/work_log.md
+# Development-only archives and local assets
+# 開発専用archiveとローカル素材
+/old/
+/data/
+/__ToDo__/
+/__logo__/
+/images/
+/.devcontainer/

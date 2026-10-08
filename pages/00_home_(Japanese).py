@@ -14,26 +14,31 @@ import streamlit as st
 import envgeo_utils
 
 
-BASE_DIR = Path(__file__).resolve().parent
-APP_VERSION = "0.3.2"
+APP_ROOT = Path(__file__).resolve().parents[1]
+README_PATH = APP_ROOT / "README_Japanese.md"
 
 URLS = {
     "lab": "https://envgeo.h.kyoto-u.ac.jp/simple-earthquake-hypocenter-visualization/",
     "contact": "https://www.h.kyoto-u.ac.jp/en_f/faculty_f/ishimura_toyoho_4dea/#mailform",
-    "usgs_api": "https://earthquake.usgs.gov/fdsnws/event/1/",
-    "usgs_comcat": "https://www.fdsn.org/datacenters/detail/USGS/",
+    "usgs_api": envgeo_utils.USGS_EVENT_API_URL,
+    "usgs_comcat": envgeo_utils.USGS_COMCAT_CITATION_URL,
     "usgs_credit": "https://www.usgs.gov/information-policies-and-instructions/copyrights-and-credits",
-    "usgs_plate": "https://earthquake.usgs.gov/arcgis/rest/services/eq/map_plateboundaries/MapServer",
+    "usgs_plate": envgeo_utils.USGS_PLATE_BOUNDARY_SERVICE_URL,
     "jma_info": "https://www.data.jma.go.jp/eqev/data/en/guide/earthinfo.html",
-    "jma_bulletin": "https://www.data.jma.go.jp/eqev/data/bulletin/index_e.html",
-    "nied_hinet": "https://www.hinet.bosai.go.jp/about_data/?LANG=en",
-    "carto_basemaps": "https://carto.com/basemaps",
-    "osm_copyright": "https://www.openstreetmap.org/copyright",
-    "usgs_imagery": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer",
-    "esri_ocean": "https://services.arcgisonline.com/arcgis/rest/services/Ocean/World_Ocean_Base/MapServer",
-    "esri_basemap_attribution": "https://support.esri.com/en-us/knowledge-base/what-is-the-correct-way-to-cite-an-arcgis-online-basema-000012040",
-    "gsi_tiles": "https://maps.gsi.go.jp/development/ichiran.html",
-    "gsi_terms": "https://maps.gsi.go.jp/help/termsofuse.html",
+    "jma_bulletin": envgeo_utils.JMA_BULLETIN_URL,
+    "jma_terms": envgeo_utils.JMA_WEBSITE_TERMS_URL,
+    "jma_bulletin_usage": envgeo_utils.JMA_BULLETIN_USAGE_URL,
+    "nied_hinet": envgeo_utils.NIED_HINET_DATA_GUIDANCE_URL,
+    "nied_faq": envgeo_utils.NIED_HINET_FAQ_URL,
+    "osm_copyright": envgeo_utils.OSM_COPYRIGHT_URL,
+    "osm_tile_policy": envgeo_utils.OSM_TILE_POLICY_URL,
+    "usgs_imagery": envgeo_utils.USGS_IMAGERY_SERVICE_URL,
+    "esri_ocean": envgeo_utils.ESRI_OCEAN_SERVICE_URL,
+    "esri_basemap_attribution": envgeo_utils.ESRI_BASEMAP_ATTRIBUTION_URL,
+    "gsi_tiles": envgeo_utils.GSI_TILE_LIST_URL,
+    "gsi_terms": envgeo_utils.GSI_TERMS_URL,
+    "natural_earth": "https://www.naturalearthdata.com/",
+    "natural_earth_terms": "https://www.naturalearthdata.com/about/terms-of-use/",
 }
 
 
@@ -99,15 +104,23 @@ def render_source_links() -> None:
     st.markdown(f"- [ANSS Comprehensive Catalog citation]({URLS['usgs_comcat']})")
     st.markdown(f"- [USGS Copyrights and Credits]({URLS['usgs_credit']})")
     st.markdown(f"- [USGS Tectonic Plate Boundaries]({URLS['usgs_plate']})")
+    st.markdown(
+        f"- [USGS Seismicity of the Earth Map Series]({envgeo_utils.USGS_SEISMICITY_MAP_SERIES_URL})"
+    )
     st.markdown(f"- [JMA Earthquake Information]({URLS['jma_info']})")
     st.markdown(f"- [JMA Seismological Bulletin of Japan]({URLS['jma_bulletin']})")
+    st.markdown(f"- [JMA website terms of use]({URLS['jma_terms']})")
+    st.markdown(f"- [JMA bulletin catalog usage notes]({URLS['jma_bulletin_usage']})")
     st.markdown(f"- [NIED Hi-net data guidance]({URLS['nied_hinet']})")
-    st.markdown(f"- [CARTO Basemaps]({URLS['carto_basemaps']})")
+    st.markdown(f"- [NIED Hi-net redistribution FAQ]({URLS['nied_faq']})")
     st.markdown(f"- [OpenStreetMap copyright and license]({URLS['osm_copyright']})")
+    st.markdown(f"- [OpenStreetMap tile usage policy]({URLS['osm_tile_policy']})")
     st.markdown(f"- [USGS National Map imagery tiles]({URLS['usgs_imagery']})")
     st.markdown(f"- [Esri Ocean Basemap attribution guidance]({URLS['esri_basemap_attribution']})")
     st.markdown(f"- [GSI tile list]({URLS['gsi_tiles']})")
     st.markdown(f"- [GSI terms of use]({URLS['gsi_terms']})")
+    st.markdown(f"- [Natural Earth]({URLS['natural_earth']})")
+    st.markdown(f"- [Natural Earth terms of use]({URLS['natural_earth_terms']})")
 
 
 def render_tab_style() -> None:
@@ -185,7 +198,7 @@ def main():
         "(https://envgeo.h.kyoto-u.ac.jp/sw_jpn/) の 3D/4D 可視化ワークフローを、"
         "地震カタログデータに応用して構築しました。"
     )
-    st.write(f"バージョン: {APP_VERSION}")
+    st.write(f"バージョン: {envgeo_utils.APP_VERSION}")
     st.caption("データソース: USGS Earthquake Catalog API（GeoJSON, eventtype=earthquake）。")
     st.warning(
         "このアプリは探索的研究、教育、再現可能な可視化ワークフローを支援するためのものです。"
@@ -272,11 +285,7 @@ def main():
             "本アプリでは `eventtype=earthquake` の GeoJSON を取得し、UTC時刻、マグニチュード、"
             "深さ、緯度経度範囲、並び順、イベント数上限でフィルタできます。"
         )
-        st.write(
-            "推奨引用: U.S. Geological Survey (2017), "
-            "Advanced National Seismic System (ANSS) Comprehensive Catalog, "
-            "U.S. Geological Survey, https://doi.org/10.5066/F7MS3QZH."
-        )
+        st.write(f"推奨カタログ引用: {envgeo_utils.USGS_CATALOG_CITATION}")
         st.write(
             "USGS が作成した情報は一般に米国パブリックドメインとされていますが、USGS は適切な"
             "クレジット表示を求めています。地震カタログには複数の観測網・機関からの情報が含まれる"
@@ -294,22 +303,27 @@ def main():
             "境界位置は概略であり、教育・研究用の可視化を目的としたものです。"
             "公式なハザード評価や防災判断には使用しないでください。"
         )
+        st.markdown(f"- {envgeo_utils.BIRD_PLATE_BOUNDARY_CITATION}")
+        st.markdown(f"- {envgeo_utils.DEMETS_PLATE_MOTION_CITATION}")
 
         st.subheader("JMA / NIED 比較")
         st.write(
             "Advanced ページには、手動でアップロードした JMA/NIED 表データとの比較機能があります。"
             "JMA や NIED のサービスを自動的にスクレイピングするものではありません。"
-            "これらのカタログをダウンロードまたは再配布する際は、各提供元の利用条件や謝辞要件を確認してください。"
+            "JMA website contentは原則として出典表示と加工表示が必要です。NIED Hi-netは"
+            "download dataの再配布を禁止し、成果での提供機関・DOIの明記と成果報告を求めています。"
+            "利用者は正確な取得元の条件を確認し、このupload機能をdata再公開に使用しないでください。"
         )
+        st.markdown(f"- NIED Hi-net citation: {envgeo_utils.NIED_HINET_CITATION}")
 
         st.subheader("地図と表示レイヤー")
         st.markdown(
             f"""
-- 標準地図: Plotly/CARTO ベースマップスタイル。OpenStreetMap の attribution は地図レイヤー側で扱われます。
-- 衛星画像: [USGS National Map imagery tile service]({URLS['usgs_imagery']})。
-- 海底地形図: [Esri World Ocean Base tiles]({URLS['esri_ocean']})。出版や静的出力では Esri の attribution guidance に従ってください。
-- 等高線・地形図: [国土地理院（GSI）標準タイル]({URLS['gsi_tiles']})。
-- 海岸線オーバーレイ: EnvGeo の地図ユーティリティから継承したローカル海岸線座標ファイルを、表示上の参照レイヤーとして使用します。
+- 標準地図: Plotly組込みのOpenStreetMap標準raster style。地図レイヤーが`© OpenStreetMap contributors`を表示します。CARTO basemapは設定していません。
+- 衛星画像: [USGS National Map imagery tile service]({URLS['usgs_imagery']})。表示credit: `{envgeo_utils.USGS_IMAGERY_ATTRIBUTION}`。
+- 海底地形図: [Esri World Ocean Base tiles]({URLS['esri_ocean']})。表示credit: `{envgeo_utils.ESRI_OCEAN_ATTRIBUTION}`。航海・海上安全判断には使用しないでください。
+- 等高線・地形図: [国土地理院の標準タイル]({URLS['gsi_tiles']})。表示credit: `国土地理院`。静的な出版・再配布では最新条件を再確認してください。
+- 海岸線オーバーレイ: Natural Earth coastline v4.1.0（public domain）由来の同梱座標表を、表示上の参照レイヤーとして使用します。Made with Natural Earth.
             """
         )
 
@@ -361,6 +375,31 @@ def main():
         st.header("更新履歴")
         st.markdown(
             """
+- 開発記録（2026-10-08、アプリバージョン変更なし）
+  - **デザイン見直し:** 地球図の正確性とページ全体のバランスを再検討し、試行したページ上部ロゴを撤去。Homeは再びアプリ名から開始。
+  - **保守:** 実行時のバージョンmetadataを`envgeo_utils`に集約し、日英Homeと4つの可視化ページが共通定義を参照する構成へ変更。
+  - **可搬性:** 同梱の海岸線CSVと日英Home内READMEについて、source file基準の読込みを別のcurrent directoryから確認。
+  - **upload方針:** カタログuploadをCSV、TSV、TXT、`.xlsx`に限定。別のreader依存を必要とする旧`.xls`は対応形式から除外。
+  - **検証方針:** 新しいvalidationを、取得失敗、不正response、利用者uploadに対する現状維持のsafeguardに限定。最初のreleaseでUSGS recordの独自科学等級は追加しない。
+  - **USGS失敗処理:** 不正JSONとGeoJSON `features`がlistでないresponseを、4つの可視化pageが既に処理する読めるerrorへ変換。
+  - **任意比較:** JMA/NIED uploadを最初release/DOIのゲートではない、現状維持の任意Advanced機能に分類。正常・不正代表fileを確認し、code変更は不要と判断。
+  - **海岸線来歴:** 同梱Natural Earth coastline v4.1.0 CSVについて、checksum、保持された派生根拠、raw download記録上の制約を含む日英の出典・利用条件記録を追加。
+  - **USGS引用:** ANSS Comprehensive Catalog、Bird (2003)、DeMets et al. (2010)の引用文を共通定義へ集約し、日英Home・Simple・Advancedで同期。
+  - **地図出典:** 標準地図の説明をCARTOからOpenStreetMapへ訂正し、USGS imagery、Esri Ocean、GSIの実行時creditを提供元案内に合わせた。地図選択挙動は変えず、静的出力の注意を追加。
+  - **JMA/NIED責任:** JMAの出典・加工表示要件と、NIED Hi-netの再配布禁止、提供機関謝辞、DOI引用、利用登録、成果報告要件を分けて記録。提供元catalogはappへ同梱・保持しない。
+  - **USGS失敗test:** 共通loaderの正常、空、欠損、不正形式、HTTP error、timeout、接続失敗を実通信なしで完成。現行page挙動のcode変更は不要。
+  - **USGS query・上限test:** query構築と取得上限境界をEarthquake-local純粋helperへ切出し。4pageのwarning文言・表示時点は維持し、test済み条件を共通利用。
+  - **任意upload smoke test:** 日英Advancedの実helperを正常CSV 1件・必須列欠損CSV 1件で実行。既存alias/schema・UIは拡張しない。
+  - **座標safety:** 日英4 visualizer pageで有効な±180°/±90°境界点を保持し、欠損・非数値・範囲外USGS座標を描画前に除外。
+  - **空間幾何test:** 日英4pageの経度ラップ・日付変更線・local kmと、日英Advancedの断面投影・断面帯幾何を実helperで直接確認。runtime挙動は変更なし。
+  - **プレート境界fallback:** 正常、全面・部分失敗、不正GeoJSON、日本限定fallbackを日英で実通信なしtest。不正responseを安全に処理し、部分取得USGS dataを正確に案内。
+  - **永続page startup test:** 日英Home / Simple / Advancedについて、共通title、主要見出し、上下取得buttonをpytest内AppTestで確認。
+  - **Repository health:** 公開対象、除外、secret・秘密鍵pattern、機械固有path、symlink、runtime参照、Markdown linkのportable testを追加。
+  - **マーカーサイズ文書:** 2D・3D・Advanced断面は既にマグニチュード連動で、sliderは全体倍率、固定・連動切替は未搭載と明記。
+  - **改善:** 引継ぎ・公開文書を整備し、継承したSeawater読込みとskip testを除去し、開発専用資料を公開対象から除外。
+  - **確認:** 利用可能な全testは`132 passed, 0 skipped`。現行・testのPythonファイルはすべて構文解析に成功。
+  - **範囲:** EnvGeo-Seawaterと公開用Git cloneは変更していない。
+
 - `0.3.2`（2026-09-22）
   - **修正:** Streamlit 1.63で変化したReact/ARIA方式のタブDOMと従来のBaseWeb方式の両方を対象にし、カード型タブ表示を復元。タブを持つ全ページで共通ヘルパーを利用する構成へ統一。
   - **変更:** アプリ本体と英語・日本語のSimple / Advanced全ページを0.3.2へ更新。
@@ -408,10 +447,9 @@ def main():
 
     with tab_readme:
         st.header("README")
-        readme_file = BASE_DIR / "../README_Japanese.md"
-        if readme_file.exists():
+        if README_PATH.exists():
             with st.expander("README を表示", expanded=True):
-                render_markdown_streamlit(read_text_file(readme_file), base_dir=BASE_DIR)
+                render_markdown_streamlit(read_text_file(README_PATH), base_dir=APP_ROOT)
         else:
             st.info("README_Japanese.md が見つかりません。")
 

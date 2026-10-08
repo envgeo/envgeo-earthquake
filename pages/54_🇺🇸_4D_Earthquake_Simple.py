@@ -20,9 +20,6 @@ import envgeo_utils
 PAGE_STATE_PREFIX = "eq_en_simple"
 
 
-version = "0.3.2"  # 2026-09-22
-
-
 st.set_page_config(
     page_title="EnvGeo-Earthquake",
     initial_sidebar_state="auto",
@@ -117,6 +114,30 @@ def earthquake_color_scale(color_column):
         ]
 
     return ["green", "yellow", "orange", "red", "darkred"]
+
+
+def earthquake_marker_sizes(magnitudes, mode, scale, view, magnitude_ratio=20.0):
+    """Return direct pixel sizes for fixed or magnitude-linked markers."""
+    profiles = {
+        "3d": (6.0, 6.0, 0.8, 180.0),
+        "2d": (15.0, 15.0, 1.0, 450.0),
+        "section": (9.0, 9.0, 0.8, 280.0),
+    }
+    reference_size, fixed_size, lower, upper = profiles[view]
+    magnitude = pd.to_numeric(pd.Series(magnitudes), errors="coerce").fillna(0).clip(lower=0)
+    base_size = (
+        reference_size * (max(float(magnitude_ratio), 1.0) ** ((magnitude - 4.0) / 3.0))
+        if mode == "magnitude"
+        else pd.Series(fixed_size, index=magnitude.index, dtype=float)
+    )
+
+    # Visual emphasis only: at scale 1.0, M7 is about 20 times M4 in diameter.
+    # 表示上の強調のみで、倍率1.0ではM7の直径をM4の約20倍とする。
+
+    # Use a direct multiplier so the UI value matches the visible scale.
+    # UIの数値と表示倍率を一致させる。
+    scale_factor = max(float(scale), 0.0)
+    return (base_size * scale_factor).clip(lower=lower, upper=upper)
 
 
 def build_datetime_range(date_range, start_clock, end_clock):
@@ -622,8 +643,22 @@ def fetch_earthquake_dataframe(query):
 def prepare_plot_dataframe(df_eq):
     """
     Keep plottable hypocenter rows and define marker sizes from magnitude.
+
+    描画可能な震源だけを残し、magnitudeからmarker sizeを定義する。
     """
-    df_plot = df_eq.dropna(subset=["Longitude_degE", "Latitude_degN", "Depth_km"]).copy()
+    df_plot = df_eq.copy()
+    for column in ["Longitude_degE", "Latitude_degN", "Depth_km"]:
+        df_plot[column] = pd.to_numeric(df_plot[column], errors="coerce")
+
+    # Keep finite GeoJSON coordinates inside geographic bounds.
+    # 有限かつ地理的範囲内のGeoJSON座標だけを描画対象にする。
+    df_plot = df_plot.dropna(
+        subset=["Longitude_degE", "Latitude_degN", "Depth_km"]
+    )
+    df_plot = df_plot.loc[
+        df_plot["Longitude_degE"].between(-180.0, 180.0)
+        & df_plot["Latitude_degN"].between(-90.0, 90.0)
+    ].copy()
     if df_plot.empty:
         return df_plot
 
@@ -657,22 +692,45 @@ def visualization_controls(df_plot, query):
             key="eq_fig_depth_scale",
         )
 
+        marker_size_mode_label = st.radio(
+            "Marker size mode",
+            ["Magnitude-linked", "Fixed size"],
+            index=0,
+            horizontal=True,
+            key="eq_marker_size_mode",
+            help="Magnitude-linked is a visual emphasis: at scale 1.0, M7 is about 20 times M4 in marker diameter.",
+        )
+        marker_size_mode = "magnitude" if marker_size_mode_label == "Magnitude-linked" else "fixed"
+
+        magnitude_size_ratio = st.slider(
+            "Magnitude contrast (M7/M4 diameter ratio)",
+            min_value=1.0,
+            max_value=30.0,
+            value=20.0,
+            step=1.0,
+            disabled=(marker_size_mode == "fixed"),
+            key="eq_magnitude_size_ratio",
+            help="Visual emphasis only: 20 means an M7 marker is about 20 times the diameter of M4.",
+        )
+
         marker_size_scale_3d = st.slider(
             "3D marker size scale",
             min_value=0.2,
-            max_value=3.0,
-            value=0.7,
+            max_value=10.0,
+            value=1.0,
             step=0.1,
             key="eq_marker_size_scale_3d",
+            help="Direct overall multiplier: 1.0 is standard and 10.0 is ten times the pixel size.",
         )
 
         marker_size_scale_2d = st.slider(
             "2D map marker size scale",
             min_value=0.2,
-            max_value=3.0,
-            value=0.6,
+            max_value=10.0,
+            value=1.0,
             step=0.1,
             key="eq_marker_size_scale_2d",
+            help="Direct overall multiplier: 1.0 is standard and 10.0 is ten times the pixel size.",
         )
 
         z_aspect_scale_3d = st.slider(
@@ -723,6 +781,8 @@ def visualization_controls(df_plot, query):
     return {
         "fig_depth_min": fig_depth_min,
         "fig_depth_max": fig_depth_max,
+        "marker_size_mode": marker_size_mode,
+        "magnitude_size_ratio": magnitude_size_ratio,
         "marker_size_scale_3d": marker_size_scale_3d,
         "marker_size_scale_2d": marker_size_scale_2d,
         "z_aspect_scale_3d": z_aspect_scale_3d,
@@ -745,12 +805,12 @@ def render_4d_hypocenter_map(df_plot, query, viz):
     crosses_dateline = query["lon_min"] < -180.0 or query["lon_max"] > 180.0
     line_central_meridian = center_lon if (using_pacific_center or crosses_dateline) else None
 
-    # Plotly 3D/WebGL marker sizes can appear much larger than 2D markers,
-    # and the apparent size can differ by browser.  Use a separate, conservative
-    # 3D marker-size column instead of Plotly Express size normalization.
-    magnitude_3d = pd.to_numeric(df_plot["Magnitude"], errors="coerce").fillna(0).clip(lower=0)
-    df_plot["MarkerSize3D"] = (1.8 + magnitude_3d * 0.8) * viz["marker_size_scale_3d"]
-    df_plot["MarkerSize3D"] = df_plot["MarkerSize3D"].clip(lower=1.5, upper=16.0)
+    # Use direct pixel sizes for predictable mode, contrast, and overall scale.
+    # 方式・強調率・全体倍率を予測可能にするため、直接pixel sizeを用いる。
+    df_plot["MarkerSize3D"] = earthquake_marker_sizes(
+        df_plot["Magnitude"], viz["marker_size_mode"], viz["marker_size_scale_3d"], "3d",
+        viz["magnitude_size_ratio"],
+    )
 
     df_plot = df_plot.sort_values(by=["Depth_km", "Magnitude"], ascending=[False, True])
 
@@ -885,6 +945,12 @@ def render_4d_hypocenter_map(df_plot, query, viz):
             )
         )
 
+    st.caption(
+        "3D camera controls: drag to rotate. Use the Plotly toolbar at the upper "
+        "right to switch rotation, pan, zoom, or reset the camera. Modifier keys "
+        "(Shift, Control, Option/Alt, or Command) can change mouse-drag behavior and move the "
+        "viewpoint or center; details vary by browser and operating system."
+    )
     st.plotly_chart(
         fig_eq,
         key="earthquake_4d_hypocenter_map",
@@ -918,7 +984,10 @@ def render_2d_distribution_map(df_plot, query, viz):
         lon_center_hint = (query["lon_min"] + query["lon_max"]) / 2
     center_lat, center_lon, auto_zoom = auto_map_view(df_plot, lon_center_hint=lon_center_hint)
     df_map = df_plot.copy()
-    df_map["MagnitudeMarkerSize"] = df_map["MagnitudeMarkerSize"] * viz["marker_size_scale_2d"]
+    df_map["MagnitudeMarkerSize"] = earthquake_marker_sizes(
+        df_map["Magnitude"], viz["marker_size_mode"], viz["marker_size_scale_2d"], "2d",
+        viz["magnitude_size_ratio"],
+    )
 
     fig_map = px.scatter_mapbox(
         df_map,
@@ -1000,7 +1069,7 @@ def display_earthquake_table(df_eq):
 
 def main():
     st.title(f"EnvGeo-Earthquake")
-    st.header(f"4D Visualizer Earthquake Simple ({version})")
+    st.header(f"4D Visualizer Earthquake Simple ({envgeo_utils.APP_VERSION})")
     st.caption("Source: USGS Earthquake Catalog. Data may be preliminary and updated.")
 
     with st.expander("Data use note / データ利用上の注意", expanded=False):
@@ -1017,6 +1086,8 @@ def main():
             "Earthquake data are accessed from the USGS Earthquake Catalog. "
             "USGS data may be revised after publication."
         )
+        st.write(f"Recommended catalog citation: {envgeo_utils.USGS_CATALOG_CITATION}")
+        st.markdown(f"[USGS FDSN Event Web Service]({envgeo_utils.USGS_EVENT_API_URL})")
 
     region_preset = main_region_selector()
     query = sidebar_controls(region_preset)
@@ -1026,7 +1097,7 @@ def main():
     st.write(f"{len(df_eq)} earthquake events found")
     if query_url:
         st.markdown(f"[USGS API query]({query_url})")
-    if len(df_eq) >= query["limit"]:
+    if envgeo_utils.usgs_result_limit_reached(len(df_eq), query["limit"]):
         st.caption(
             "⚠️ "
             f"The retrieval limit of {query['limit']} events was reached, so you may be seeing only a subset of all matching events. "

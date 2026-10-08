@@ -6,6 +6,7 @@
 
 ## 現在の基本方針
 
+- 現状の機能と挙動を維持し、安定動作、正確な文書、test、配布、releaseに本当に必要な変更だけを追加する。
 - 日常的な編集は開発用作業フォルダで行う。
 - レビューとテストを終えた変更だけをGitクローンへコピーしてcommitする。
 - ユーザー向けの挙動、文言、データソース、テスト、操作手順を変更した場合は、README、README_Japanese、Homeの更新履歴、`docs/`も更新する。
@@ -15,6 +16,50 @@
 
 ## 直近の作業
 
+- [ ] `PROJECT_STATUS.md` と `docs/publication_audit_2026-10-08.md` に記録した
+  単独公開ゲートを、EnvGeo-Seawaterを変更・依存先化せず完了する。
+  - [x] Earthquakeのアクティブutilityから、継承したSeawater dataset読込みと
+    未公表dataset参照を除去または隔離する。開発フォルダで完了し、
+    公開用cloneへの反映はユーザー指示待ち。
+  - [x] Seawater dataset不在時にskipする4テストをEarthquake contractテストへ置き換える。
+  - [x] 実行時のversion metadataを`envgeo_utils.py`に集約し、日英Homeと4つの現行可視化ページで共通参照を強制する。
+  - [x] project外のcurrent directoryから、同梱海岸線と日英Home内READMEの読込みを確認する。
+  - [x] 日英Advancedのuploadから旧`.xls`を外し、CSV、TSV、TXT、`.xlsx`対応を維持・testする。
+  - [x] 現状挙動を維持し、推測的なvalidation機能を後回しにする日英の最小検証方針を定義する。
+  - [x] 現行USGS失敗経路を監査し、再現した不正JSONと不正`features`のcrashを、既存pageが処理する`RuntimeError`経路へ変換する。
+  - [x] 任意JMA/NIED uploadを監査。正常CSV、必須列欠損、壊れたXLSXは日英とも安全に処理される。拡張せず維持し、最初release/DOIのゲートにしない。
+  - [ ] 実ネットワーク非依存のPython 3.10/3.12 GitHub Actions CIを追加する。
+  - [x] 同梱海岸線CSVへNatural Earth v4.1.0の派生根拠、出力hash、raw download記録上の
+    制約を含む出典・ライセンス情報を追加する。
+  - [x] USGS/ANSS catalogとUSGS plate-boundaryの引用文を共通定義へ集約し、
+    日英Home、Simple、Advanced、README、manualで同期する。
+  - [x] online地図の出典表示を再確認する。標準地図がCARTOではなくOpenStreetMapで
+    あることを確認し、USGS imagery、Esri Ocean、GSIの実行時creditと日英案内を
+    提供元資料に合わせる。
+  - [x] JMAとNIEDの責任を分けて記録する。JMAの出典・加工表示・第三者権利確認と、
+    NIEDの再配布禁止、提供機関謝辞、DOI引用、利用登録、成果報告を明記する。
+  - [x] 現行pageのerror処理を変えず、USGS loaderの正常、空、欠損、不正JSON/GeoJSON、
+    HTTP error、timeout、接続失敗を実通信なしtestで完成させる。
+  - [x] USGS query構築と、日英4 visualizer pageが使う取得上限境界を純粋helperへ
+    切り出してtestする。warning文言・表示時点は変更しない。
+  - [x] 日英Advancedの実際のupload helperを、正常CSV 1件と必須列欠損CSV 1件で
+    smoke testする。alias・schemaは変更しない。
+  - [x] 日英4pageの実際の描画準備helperをtestし、境界上の座標は保持したまま、
+    USGS GeoJSONの欠損・非数値・範囲外座標を描画前に除外する。
+  - [x] 日英Advancedのplate-boundary loaderを、実通信なしで2layer正常取得、全面・部分失敗、
+    不正GeoJSON、日本限定fallback、正確な部分data warningについてtestする。
+  - [x] 日英Homeと現行4 visualizer pageについて、主要見出しと上下取得buttonを含む
+    永続startup AppTestを追加する。
+  - [x] 公開allowlist・除外、秘密情報・秘密鍵pattern、機械固有絶対path、symlink、
+    runtime参照、Markdown linkのportable repository-health testを追加する。
+  - [x] Phase 5前に、日英の固定・マグニチュード連動のmarker size切替を追加する。
+    既定はマグニチュード連動とし、M7:M4直径比を調整可能にする。主要2D・3D・Advanced断面表示に
+    標準の最大10倍の全体直接倍率を適用して、決定論的testを追加する。
+  - [x] EnvGeo-Seawaterの文言を踏襲し、日英4 visualizer pageの主要3D図直前に、
+    Shift / Control / Option（Alt） / Command・browser・OS差を含む簡潔なPlotly 3D camera操作案内を追加する。
+  - [ ] `CITATION.cff`、リリースmetadata、公開対象検査を追加する。
+  - [x] `old/`、cache、OS生成物、作業用文書、不要データを公開リリースから除外する。開発専用directoryはroot固定のignore規則で除外し、ファイル自体は開発フォルダに維持する。
+  - [ ] tag作成前に日英Home / Simple / Advancedの公開環境スモークを実施・記録する。
 - [ ] Plotly 5.24を検証済み基準として、Python 3.10-3.12 / Streamlit 1.42-1.63互換の0.3.2について残りの画面確認を完了し、その後に公開を判断する。
 - [ ] 別途設計レビュー後、50m／110m海岸線CSVとキャッシュ読込を`envgeo-core`へ集約する。SeawaterとEarthquakeの両方で読込・画面確認が独立して合格するまで、各アプリ内のCSVを維持する。
   - [x] `requirements.txt`でStreamlit 1.42-1.63を許容し、新規デプロイでは1.63が選択される設定へ更新する。
@@ -35,9 +80,10 @@
 - [ ] 日本語・英語ページの文言をブラウザ上で確認する。
 - [ ] Simple / Advancedページ用の短いスクリーンショット・手動QAチェックリストを追加する。
 - [ ] Region選択の状態管理を、テスト可能なヘルパー関数へ移すことを検討する。
-- [ ] 経度ラップ、ローカルkm座標、断面図ジオメトリのテストを拡充する。
-- [ ] JMA/NIED比較データのアップロード説明と、受け付ける列名を見直す。
-- [ ] `old/`、`data/`、`__logo__/`、画像素材を公開GitHubリポジトリへ含めるか判断する。
+- [x] 経度ラップ、日付変更線の連続・継ぎ目、ローカルkm座標、日英Advancedの
+  断面図ジオメトリのテストを拡充する。
+- [x] JMA/NIED比較uploadの説明と受付列を見直し、現行alias/形式は変更せず任意機能に分類する。
+- [x] `old/`、`data/`、`__logo__/`、画像素材を公開GitHubリポジトリへ含めるか判断する。`docs/public_release_scope_Japanese.md`に基づき除外し、マニュアル用screenshotだけを含める。
 
 ## ドキュメント・テスト方針
 
@@ -54,7 +100,8 @@ JOSS対応を想定した外部レビューから有益な部分を、EnvGeo-Ear
 テスト方針:
 
 - 科学・空間処理の主な確認には純粋関数のpytestを使用し、UIワークフローには永続的な`streamlit.testing.v1.AppTest`テストを追加する。
-- AppTestは、Homeと、日本語・英語のSimple / Advancedページから開始する。起動、Region / hotspot操作、フィルタ適用、抽出結果0件、メッセージ、ダウンロード、セッション状態を確認する。
+- AppTestは日英Homeと日本語・英語のSimple / Advancedの起動確認を開始済み。今後は
+  Region / hotspot操作、フィルタ適用、抽出結果0件、メッセージ、ダウンロード、session stateを確認する。
 - 自動テストではUSGS応答をモックする。CIで実サービスへ依存せず、正常、空、不正形式、タイムアウト、レート制限、その他のAPI障害を確認する。
 - JMA/NIEDアップロードについて、想定内・想定外の列名、不正ファイル、座標欠損、NaN、日付変更線付近のデータをテストする。
 - Plotly/WebGL描画、地図タイル、選択ツール、3Dカメラ、最終スクリーンショットの見た目は、短い手動視覚QAチェックリストで確認する。

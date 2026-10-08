@@ -22,7 +22,6 @@ import streamlit as st
 import envgeo_utils
 
 
-version = "0.3.2"  # 2026-09-22
 PAGE_STATE_PREFIX = "eq_ja_advanced"
 
 st.set_page_config(
@@ -100,12 +99,11 @@ REGION_CROSS_SECTION_PRESETS = {
     PHILIPPINES_REGION_LABEL: (121.0, 24.0, 129.0, 12.0),
 }
 CROSS_SECTION_PRESET_VERSION = "2026-05-19-a"
-USGS_PLATE_BOUNDARY_SERVICE = (
-    "https://earthquake.usgs.gov/arcgis/rest/services/eq/map_plateboundaries/MapServer"
-)
-USGS_EVENT_API_URL = "https://earthquake.usgs.gov/fdsnws/event/1/"
-USGS_COMCAT_FDSN_URL = "https://www.fdsn.org/datacenters/detail/USGS/"
+USGS_PLATE_BOUNDARY_SERVICE = envgeo_utils.USGS_PLATE_BOUNDARY_SERVICE_URL
+USGS_EVENT_API_URL = envgeo_utils.USGS_EVENT_API_URL
+USGS_COMCAT_FDSN_URL = envgeo_utils.USGS_COMCAT_CITATION_URL
 USGS_CREDIT_URL = "https://www.usgs.gov/information-policies-and-instructions/copyrights-and-credits"
+NATURAL_EARTH_TERMS_URL = "https://www.naturalearthdata.com/about/terms-of-use/"
 PLATE_LAYER_IDS = {
     1: "Plates",
     0: "Microplates",
@@ -122,7 +120,8 @@ JMA_EARTHQUAKE_INFO_URL = "https://www.data.jma.go.jp/eqev/data/en/guide/earthin
 NIED_HINET_DATA_URL = "https://www.hinet.bosai.go.jp/about_data/?LANG=en"
 PLATE_BOUNDARY_NOTE_JA = (
     "プレート境界は USGS Tectonic Plate Boundaries service を使用しています。"
-    "USGSサービスのメタデータに基づき、主な出典には Bird (2003) および DeMets et al. (2010) が含まれます。"
+    "service metadataはUSGS Seismicity of the Earth Map Series、Bird (2003)、"
+    "DeMets et al. (2010)を出典として示しています。"
     "境界位置は概略であり、教育・研究用の可視化を目的としたもので、"
     "公式なハザード評価や防災判断には使用しないでください。"
 )
@@ -165,6 +164,30 @@ def earthquake_color_scale(color_column):
         ]
 
     return ["green", "yellow", "orange", "red", "darkred"]
+
+
+def earthquake_marker_sizes(magnitudes, mode, scale, view, magnitude_ratio=20.0):
+    """Return direct pixel sizes for fixed or magnitude-linked markers."""
+    profiles = {
+        "3d": (6.0, 6.0, 0.8, 180.0),
+        "2d": (15.0, 15.0, 1.0, 450.0),
+        "section": (9.0, 9.0, 0.8, 280.0),
+    }
+    reference_size, fixed_size, lower, upper = profiles[view]
+    magnitude = pd.to_numeric(pd.Series(magnitudes), errors="coerce").fillna(0).clip(lower=0)
+    base_size = (
+        reference_size * (max(float(magnitude_ratio), 1.0) ** ((magnitude - 4.0) / 3.0))
+        if mode == "magnitude"
+        else pd.Series(fixed_size, index=magnitude.index, dtype=float)
+    )
+
+    # Visual emphasis only: at scale 1.0, M7 is about 20 times M4 in diameter.
+    # 表示上の強調のみで、倍率1.0ではM7の直径をM4の約20倍とする。
+
+    # Use a direct multiplier so the UI value matches the visible scale.
+    # UIの数値と表示倍率を一致させる。
+    scale_factor = max(float(scale), 0.0)
+    return (base_size * scale_factor).clip(lower=lower, upper=upper)
 
 
 def fallback_japan_plate_boundary_features():
@@ -252,7 +275,20 @@ def fetch_usgs_plate_boundary_features(include_microplates):
                 errors.append(f"{PLATE_LAYER_IDS[layer_id]}: {e}")
                 break
 
-            page_features = payload.get("features", []) if isinstance(payload, dict) else []
+            # Reject malformed GeoJSON before feature mutation and fallback safely.
+            # 不正GeoJSONをfeature変更前に検出し、安全なfallback経路へ渡す。
+            if not isinstance(payload, dict) or not isinstance(payload.get("features"), list):
+                errors.append(
+                    f"{PLATE_LAYER_IDS[layer_id]}: unexpected GeoJSON response"
+                )
+                break
+
+            page_features = payload["features"]
+            if not all(isinstance(feature, dict) for feature in page_features):
+                errors.append(
+                    f"{PLATE_LAYER_IDS[layer_id]}: invalid GeoJSON feature"
+                )
+                break
             for feature in page_features:
                 feature.setdefault("properties", {})
                 feature["properties"]["Layer"] = PLATE_LAYER_IDS[layer_id]
@@ -397,8 +433,11 @@ def render_plate_boundary_note():
     st.write(PLATE_BOUNDARY_NOTE_JA)
     st.write(PLATE_BOUNDARY_FALLBACK_NOTE_JA)
     st.markdown(f"[USGS Tectonic Plate Boundaries サービス]({USGS_PLATE_BOUNDARY_SERVICE})")
-    st.markdown("- 参照: Bird (2003) https://doi.org/10.1029/2001GC000252")
-    st.markdown("- 参照: DeMets et al. (2010) https://doi.org/10.1111/j.1365-246X.2009.04491.x")
+    st.markdown(
+        f"- [USGS Seismicity of the Earth Map Series]({envgeo_utils.USGS_SEISMICITY_MAP_SERIES_URL})"
+    )
+    st.markdown(f"- {envgeo_utils.BIRD_PLATE_BOUNDARY_CITATION}")
+    st.markdown(f"- {envgeo_utils.DEMETS_PLATE_MOTION_CITATION}")
 
 
 def build_datetime_range(date_range, start_clock, end_clock):
@@ -1110,8 +1149,22 @@ def fetch_earthquake_dataframe(query):
 def prepare_plot_dataframe(df_eq):
     """
     Keep plottable hypocenter rows and define marker sizes from magnitude.
+
+    描画可能な震源だけを残し、magnitudeからmarker sizeを定義する。
     """
-    df_plot = df_eq.dropna(subset=["Longitude_degE", "Latitude_degN", "Depth_km"]).copy()
+    df_plot = df_eq.copy()
+    for column in ["Longitude_degE", "Latitude_degN", "Depth_km"]:
+        df_plot[column] = pd.to_numeric(df_plot[column], errors="coerce")
+
+    # Keep finite GeoJSON coordinates inside geographic bounds.
+    # 有限かつ地理的範囲内のGeoJSON座標だけを描画対象にする。
+    df_plot = df_plot.dropna(
+        subset=["Longitude_degE", "Latitude_degN", "Depth_km"]
+    )
+    df_plot = df_plot.loc[
+        df_plot["Longitude_degE"].between(-180.0, 180.0)
+        & df_plot["Latitude_degN"].between(-90.0, 90.0)
+    ].copy()
     if df_plot.empty:
         return df_plot
 
@@ -1146,31 +1199,55 @@ def visualization_controls(df_plot, query):
             key="eq_fig_depth_scale",
         )
 
+        marker_size_mode_label = st.radio(
+            "マーカーサイズ方式",
+            ["マグニチュード連動", "固定サイズ"],
+            index=0,
+            horizontal=True,
+            key="eq_marker_size_mode",
+            help="マグニチュード連動は表示上の強調です。倍率1.0でM7のマーカー直径はM4の約20倍です。",
+        )
+        marker_size_mode = "magnitude" if marker_size_mode_label == "マグニチュード連動" else "fixed"
+
+        magnitude_size_ratio = st.slider(
+            "マグニチュード強調率（M7 / M4 直径比）",
+            min_value=1.0,
+            max_value=30.0,
+            value=20.0,
+            step=1.0,
+            disabled=(marker_size_mode == "fixed"),
+            key="eq_magnitude_size_ratio",
+            help="表示上の強調です。20ではM7のマーカー直径がM4の約20倍になります。",
+        )
+
         marker_size_scale_3d = st.slider(
             "3Dマーカーサイズ倍率",
             min_value=0.2,
-            max_value=3.0,
-            value=0.7,
+            max_value=10.0,
+            value=1.0,
             step=0.1,
             key="eq_marker_size_scale_3d",
+            help="全体の直接倍率です。1.0が標準、10.0でpixel sizeが10倍になります。",
         )
 
         marker_size_scale_2d = st.slider(
             "2Dマーカーサイズ倍率",
             min_value=0.2,
-            max_value=3.0,
-            value=0.6,
+            max_value=10.0,
+            value=1.0,
             step=0.1,
             key="eq_marker_size_scale_2d",
+            help="全体の直接倍率です。1.0が標準、10.0でpixel sizeが10倍になります。",
         )
 
         marker_size_scale_section = st.slider(
             "断面図マーカーサイズ倍率",
             min_value=0.2,
-            max_value=3.0,
-            value=0.6,
+            max_value=10.0,
+            value=1.0,
             step=0.1,
             key="eq_marker_size_scale_section",
+            help="全体の直接倍率です。1.0が標準、10.0でpixel sizeが10倍になります。",
         )
 
         z_aspect_scale_3d = st.slider(
@@ -1236,6 +1313,8 @@ def visualization_controls(df_plot, query):
     return {
         "fig_depth_min": fig_depth_min,
         "fig_depth_max": fig_depth_max,
+        "marker_size_mode": marker_size_mode,
+        "magnitude_size_ratio": magnitude_size_ratio,
         "marker_size_scale_3d": marker_size_scale_3d,
         "marker_size_scale_2d": marker_size_scale_2d,
         "marker_size_scale_section": marker_size_scale_section,
@@ -1352,12 +1431,12 @@ def render_4d_hypocenter_map(df_plot, query, viz, plate_boundary_df=None):
     crosses_dateline = query["lon_min"] < -180.0 or query["lon_max"] > 180.0
     line_central_meridian = center_lon if (using_pacific_center or crosses_dateline) else None
 
-    # Plotly 3D/WebGL marker sizes can appear much larger than 2D markers,
-    # and the apparent size can differ by browser.  Use a separate, conservative
-    # 3D marker-size column instead of Plotly Express size normalization.
-    magnitude_3d = pd.to_numeric(df_plot["Magnitude"], errors="coerce").fillna(0).clip(lower=0)
-    df_plot["MarkerSize3D"] = (1.8 + magnitude_3d * 0.8) * viz["marker_size_scale_3d"]
-    df_plot["MarkerSize3D"] = df_plot["MarkerSize3D"].clip(lower=1.5, upper=16.0)
+    # Use direct pixel sizes for predictable mode, contrast, and overall scale.
+    # 方式・強調率・全体倍率を予測可能にするため、直接pixel sizeを用いる。
+    df_plot["MarkerSize3D"] = earthquake_marker_sizes(
+        df_plot["Magnitude"], viz["marker_size_mode"], viz["marker_size_scale_3d"], "3d",
+        viz["magnitude_size_ratio"],
+    )
 
     df_plot = df_plot.sort_values(by=["Depth_km", "Magnitude"], ascending=[False, True])
 
@@ -1501,6 +1580,11 @@ def render_4d_hypocenter_map(df_plot, query, viz, plate_boundary_df=None):
         central_meridian=line_central_meridian,
     )
 
+    st.caption(
+        "3D視点操作: 図内をドラッグして回転できます。右上のPlotlyツールバーで回転・平行移動・"
+        "拡大縮小・初期視点へのリセットを切り替えられます。Shift、Control、Option（Alt）、Commandキーと"
+        "マウス操作の組み合わせで視点や中心の動かし方を変えることができます（ブラウザ・OSにより異なります）。"
+    )
     st.plotly_chart(
         fig_eq,
         key="earthquake_4d_hypocenter_map",
@@ -1581,7 +1665,10 @@ def render_2d_distribution_map(df_plot, query, viz, plate_boundary_df=None):
     line_central_meridian = lon_center_hint
     center_lat, center_lon, auto_zoom = auto_map_view(df_plot, lon_center_hint=lon_center_hint)
     df_map = df_plot.copy()
-    df_map["MagnitudeMarkerSize"] = df_map["MagnitudeMarkerSize"] * viz["marker_size_scale_2d"]
+    df_map["MagnitudeMarkerSize"] = earthquake_marker_sizes(
+        df_map["Magnitude"], viz["marker_size_mode"], viz["marker_size_scale_2d"], "2d",
+        viz["magnitude_size_ratio"],
+    )
 
     fig_map = px.scatter_mapbox(
         df_map,
@@ -1775,7 +1862,13 @@ def render_cross_section_location_map(
         )
 
     if not df_section.empty:
-        selected_size = (2.0 + pd.to_numeric(df_section_map["Magnitude"], errors="coerce").fillna(0).clip(lower=0) * 2.6)
+        selected_size = earthquake_marker_sizes(
+            df_section_map["Magnitude"],
+            viz["marker_size_mode"],
+            viz["marker_size_scale_section"],
+            "section",
+            viz["magnitude_size_ratio"],
+        )
         fig_location.add_trace(
             go.Scattermapbox(
                 lat=df_section_map["Latitude_degN"],
@@ -1783,7 +1876,7 @@ def render_cross_section_location_map(
                 mode="markers",
                 name="断面内イベント",
                 marker=dict(
-                    size=(selected_size * viz["marker_size_scale_section"]).tolist(),
+                    size=selected_size.tolist(),
                     color=pd.to_numeric(df_section_map[viz["color_column"]], errors="coerce"),
                     colorscale=earthquake_color_scale(viz["color_column"]),
                     cmin=color_range[0],
@@ -1938,14 +2031,15 @@ def render_cross_section_and_depth_profile(df_plot, query, viz, plate_boundary_d
         end_lon,
         end_lat,
     )
-    # Build a cross-section-specific marker size that responds clearly to the
-    # sidebar scale.  We avoid Plotly Express size normalization and use a
-    # direct pixel size instead so that increasing the slider always makes the
-    # section markers larger and decreasing it always makes them smaller.
-    magnitude_section = pd.to_numeric(df_section["Magnitude"], errors="coerce").fillna(0).clip(lower=0)
-    section_scale = float(viz["marker_size_scale_section"]) ** 1.35
-    df_section["SectionMarkerSize"] = (1.4 + magnitude_section * 1.6) * section_scale
-    df_section["SectionMarkerSize"] = df_section["SectionMarkerSize"].clip(lower=0.8, upper=22.0)
+    # Apply the same mode, magnitude contrast, and overall scale to both section views.
+    # 2つの断面表示に同じ方式・magnitude強調率・全体倍率を適用する。
+    df_section["SectionMarkerSize"] = earthquake_marker_sizes(
+        df_section["Magnitude"],
+        viz["marker_size_mode"],
+        viz["marker_size_scale_section"],
+        "section",
+        viz["magnitude_size_ratio"],
+    )
 
     if section_length_km <= 0:
         with section_plot_container:
@@ -2097,7 +2191,7 @@ def read_uploaded_catalog(uploaded_file):
 
     file_name = uploaded_file.name.lower()
     try:
-        if file_name.endswith((".xlsx", ".xls")):
+        if file_name.endswith(".xlsx"):
             return pd.read_excel(uploaded_file)
         return pd.read_csv(uploaded_file, sep=None, engine="python")
     except Exception:
@@ -2224,7 +2318,7 @@ def render_jma_nied_comparison_page(df_plot, query, plate_boundary_df=None):
     )
     uploaded_file = st.file_uploader(
         "JMA/NIED カタログ表をアップロード",
-        type=["csv", "tsv", "txt", "xlsx", "xls"],
+        type=["csv", "tsv", "txt", "xlsx"],
         key="eq_jma_nied_upload",
     )
     df_external_raw = read_uploaded_catalog(uploaded_file)
@@ -2386,7 +2480,7 @@ def display_earthquake_table(df_eq):
 
 def main():
     st.title(f"EnvGeo-Earthquake")
-    st.header(f"4D Visualizer Earthquake 詳細版（{version}）")
+    st.header(f"4D Visualizer Earthquake 詳細版（{envgeo_utils.APP_VERSION}）")
     st.caption("データソース: USGS Earthquake Catalog（速報値を含み、後日更新される場合があります）。")
 
 
@@ -2404,11 +2498,7 @@ def main():
             "本アプリは EnvGeo-Seawater の可視化ワークフローを地震データへ展開した、"
             "研究・教育向けの震源カタログ探索ページです。"
         )
-        st.write(
-            "推奨引用: U.S. Geological Survey (2017), "
-            "Advanced National Seismic System (ANSS) Comprehensive Catalog, "
-            "U.S. Geological Survey, https://doi.org/10.5066/F7MS3QZH"
-        )
+        st.write(f"推奨カタログ引用: {envgeo_utils.USGS_CATALOG_CITATION}")
         st.write(
             "USGS 由来情報は原則パブリックドメインですが、クレジット表記が推奨されています。"
             "また、複数機関由来データを含む場合は各提供元の利用条件に従ってください。"
@@ -2417,9 +2507,10 @@ def main():
         st.markdown(f"- [ANSS / USGS FDSN データセンター情報]({USGS_COMCAT_FDSN_URL})")
         st.markdown(f"- [USGS Copyrights and Credits]({USGS_CREDIT_URL})")
         st.caption(
-            "3D 表示で重ねるローカル海岸線 Excel は、このリポジトリ内に出典・ライセンス情報がないため、"
-            "概略の参照表示として扱ってください。"
+            "3D表示で重ねるローカル海岸線CSVはNatural Earth coastline v4.1.0 "
+            "（public domain）由来です。Made with Natural Earth. 概略の参照表示として扱ってください。"
         )
+        st.markdown(f"- [Natural Earth terms of use]({NATURAL_EARTH_TERMS_URL})")
         render_plate_boundary_note()
 
     region_preset = main_region_selector()
@@ -2430,7 +2521,7 @@ def main():
     st.write(f"取得イベント数: {len(df_eq)} 件")
     if query_url:
         st.markdown(f"[USGS APIクエリURL]({query_url})")
-    if len(df_eq) >= query["limit"]:
+    if envgeo_utils.usgs_result_limit_reached(len(df_eq), query["limit"]):
         st.caption(
             "⚠️ "
             f"{query['limit']}件の取得上限に達しました。条件に一致する全件ではなく一部のみ表示している可能性があります。"
@@ -2460,8 +2551,10 @@ def main():
             )
         if plate_errors and plate_boundary_df.empty:
             st.warning("USGS からプレート境界データを取得できませんでした。")
-        elif plate_errors:
+        elif plate_errors and plate_source == "Approximate Japan plate-boundary fallback":
             st.warning("USGS プレート境界サービスに接続できないため、日本周辺の概略境界線を表示しています。")
+        elif plate_errors:
+            st.warning("USGSプレート境界の一部layerを取得できなかったため、取得済みlayerだけを表示しています。")
         if not plate_boundary_df.empty:
             plate_boundary_note = (
                 f"プレート境界データ: {plate_source}。境界位置は概略です。教育・研究用の可視化として利用してください。"
