@@ -28,6 +28,10 @@ pytest -q
 workflowのrepository権限はread-onlyです。local contract testにより、Python matrix、
 構文確認、公開内容検査、test commandを保護します。
 
+AppTestは上下2つの取得・更新buttonを順序付きで必須とします。Streamlit 1.63では同じ起動run中に
+後段のsidebar cache-clear buttonも現れる場合がありますが、1.51では初期空resultのため到達しない場合が
+あります。smoke contractは既知の任意3番目buttonだけを許容し、任意のUI追加は許容しません。
+
 `.pyc` を作らない構文確認を行う場合は、次を使います。
 
 ```bash

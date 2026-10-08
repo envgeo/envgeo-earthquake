@@ -18,6 +18,11 @@ local responses and do not require live USGS, tile, JMA, or NIED access.
 The workflow uses read-only repository permissions. A local workflow contract
 protects the Python matrix, syntax check, release-content check, and test command.
 
+AppTest requires the two fetch/update buttons in order. Streamlit 1.63 may also
+expose the later sidebar cache-clear button during the same startup run, while
+1.51 may not reach it with an empty initial result. The smoke contract accepts
+only that known optional third button; it does not permit arbitrary UI additions.
+
 The current suite covers utility import/centralized version, USGS citation metadata,
 JMA/NIED responsibility metadata/records, and online-map source/attribution contracts,
 current-working-directory-independent bundled assets, coastline and offline
