@@ -18,7 +18,7 @@ import envgeo_utils
 
 PAGE_CASES = [
     pytest.param(
-        ROOT / "Home.py",
+        ROOT / "home.py",
         "Start",
         None,
         id="home-english",

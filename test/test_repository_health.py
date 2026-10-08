@@ -62,7 +62,6 @@ PUBLIC_ROOT_FILES = {
     ".gitignore",
     "CONTRIBUTING.md",
     "CITATION.cff",
-    "Home.py",
     "home.py",
     "LICENSE",
     "NOTICE.md",

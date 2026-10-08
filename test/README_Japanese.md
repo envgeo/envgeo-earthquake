@@ -16,6 +16,8 @@
 - pageとCSV出力が依存するUSGS列名・列順が安定しているか。
 - 数値文字列が安全に数値化され、不正値が欠損値になるか。
 - USGSのmillisecond時刻がUTC・暦列へ一貫して変換されるか。
+- GitHub ActionsがPython 3.10/3.12 matrix、構文確認、公開内容検査、
+  実network非依存test commandを維持しているか。
 - 不正JSONと`features`がlistでないresponseが、未処理例外ではなく
   pageが処理する読めるerrorになるか。
 - 正常・空・欠損responseが共通loaderを通り、HTTP・timeout・接続失敗が
@@ -56,4 +58,5 @@ pytest -q
 海岸線・オフライン地図、page state復旧を保護します。browser操作、地図描画、
 実serviceを使うend-to-end動作は別途確認が必要です。
 
-2026-10-08のrepository-health test追加後の記録: `132 passed, 0 skipped`。
+2026-10-08のCI準備後のlocal記録: `178 passed, 0 skipped`。
+GitHubのPython 3.10/3.12 jobはworkflowをpushするまで未確認です。

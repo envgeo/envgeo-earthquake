@@ -18,6 +18,16 @@ pip install -r requirements-dev.txt
 pytest -q
 ```
 
+## GitHub Actions
+
+`.github/workflows/ci.yml`は、同じ決定論的testをPython 3.10と3.12で実行します。
+全suiteの前に、現行・test Python fileの構文解析とrepository-health checkを別stepで
+実行します。runtime testはmockまたはlocal responseを使用し、実USGS、tile、JMA、NIEDへの
+接続を必要としません。
+
+workflowのrepository権限はread-onlyです。local contract testにより、Python matrix、
+構文確認、公開内容検査、test commandを保護します。
+
 `.pyc` を作らない構文確認を行う場合は、次を使います。
 
 ```bash
@@ -113,10 +123,10 @@ python -c "import ast, pathlib; files=[pathlib.Path('home.py'), pathlib.Path('en
 4件の追加contractで、日英Plotly camera案内がShift / Control / Option（Alt） / Commandを記載し、
 各主要3D図の前にあることを保護する。
 
-2026-10-08のcamera案内更新後に、利用可能なpytest環境で
-`176 passed, 0 skipped`を確認した。日英4pageの固定・連動方式、2D・3D・断面用profile、
+2026-10-08のCI準備後、利用可能なlocal pytest環境で
+`178 passed, 0 skipped`を確認した。日英4pageの固定・連動方式、2D・3D・断面用profile、
 M7:M4直径比約20:1と調整case、`0.2–10.0`の全体直接倍率を含み、Seawater datasetや実USGS通信には依存しない。
-このローカル履歴はCIの代替ではなく、CI・クリーン環境でも再実行する。
+Python 3.10 / 3.12のGitHub jobはworkflowをcopy・pushしてGitHub上で完了するまで未確認とする。
 
 ## 現在の限界
 

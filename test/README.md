@@ -16,6 +16,8 @@ In simple terms, each test is an automatic checklist item. For example:
 - Do USGS results keep the stable columns and column order used by pages and CSV exports?
 - Are numeric text values converted safely and invalid values treated as missing?
 - Are USGS millisecond timestamps converted consistently into UTC/calendar fields?
+- Does GitHub Actions retain the Python 3.10/3.12 matrix, syntax check,
+  public-release content check, and network-independent test command?
 - Do malformed JSON and a non-list `features` member become readable errors
   handled by the pages instead of uncaught exceptions?
 - Do normal, empty, and incomplete responses pass through the shared loader,
@@ -63,4 +65,5 @@ coastlines/offline maps, and page-state recovery. Browser-level interaction,
 map rendering, and real-service end-to-end behavior still require separate
 confirmation.
 
-Recorded after the 2026-10-08 repository-health tests: `132 passed, 0 skipped`.
+Recorded after the 2026-10-08 CI preparation: `178 passed, 0 skipped` locally.
+The GitHub Python 3.10/3.12 jobs remain unverified until the workflow is pushed.
