@@ -20,8 +20,29 @@ EXCLUDED_ROOT_NAMES = {
     "old",
 }
 EXCLUDED_ROOT_FILES = {
+    "AGENTS.md",
+    "AGENTS_Japanese.md",
     "LOCAL_WORKSPACE.md",
     "LOCAL_WORKSPACE_Japanese.md",
+    "PROJECT_STATUS.md",
+    "PROJECT_STATUS_Japanese.md",
+    "TODO.md",
+    "TODO_Japanese.md",
+}
+EXCLUDED_RELATIVE_PATHS = {
+    Path("docs/capture_manual_screenshots.mjs"),
+    Path("docs/development_workflow.md"),
+    Path("docs/development_workflow_Japanese.md"),
+    Path("docs/public_release_scope.md"),
+    Path("docs/public_release_scope_Japanese.md"),
+    Path("docs/publication_audit_2026-10-08.md"),
+    Path("docs/publication_audit_2026-10-08_Japanese.md"),
+    Path("docs/publication_roadmap.md"),
+    Path("docs/publication_roadmap_Japanese.md"),
+    Path("docs/release_checklist.md"),
+    Path("docs/release_checklist_Japanese.md"),
+    Path("docs/work_log.md"),
+    Path("docs/work_log_English.md"),
 }
 GENERATED_DIRECTORY_NAMES = {
     ".git",
@@ -39,20 +60,14 @@ GENERATED_DIRECTORY_NAMES = {
 GENERATED_FILE_NAMES = {".DS_Store", "Thumbs.db", ".coverage"}
 PUBLIC_ROOT_FILES = {
     ".gitignore",
-    "AGENTS.md",
-    "AGENTS_Japanese.md",
     "CONTRIBUTING.md",
     "CITATION.cff",
     "Home.py",
     "home.py",
     "LICENSE",
     "NOTICE.md",
-    "PROJECT_STATUS.md",
-    "PROJECT_STATUS_Japanese.md",
     "README.md",
     "README_Japanese.md",
-    "TODO.md",
-    "TODO_Japanese.md",
     "envgeo_utils.py",
     "pyproject.toml",
     "requirements-dev.txt",
@@ -87,6 +102,7 @@ def _is_excluded(relative_path):
     return (
         relative_path.parts[0] in EXCLUDED_ROOT_NAMES
         or relative_path.name in EXCLUDED_ROOT_FILES
+        or relative_path in EXCLUDED_RELATIVE_PATHS
         or _is_generated(relative_path)
     )
 
@@ -146,7 +162,9 @@ def test_gitignore_covers_private_generated_and_development_material():
     for directory in EXCLUDED_ROOT_NAMES:
         assert f"/{directory}/" in ignore_lines
     for filename in EXCLUDED_ROOT_FILES:
-        assert filename in ignore_lines
+        assert f"/{filename}" in ignore_lines or filename in ignore_lines
+    for relative_path in EXCLUDED_RELATIVE_PATHS:
+        assert f"/{relative_path.as_posix()}" in ignore_lines
     for required_rule in {
         ".DS_Store",
         ".pytest_cache/",

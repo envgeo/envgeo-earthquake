@@ -33,10 +33,3 @@ EnvGeo-Earthquake は、USGS Earthquake Catalog API から取得した震源カ�
 - `pages/57_🇯🇵_4D_Earthquake_詳細版.py`
 
 英語版ページを使う場合も、操作の考え方は同じです。
-
-## 開発・維持管理用の記録
-
-このユーザーマニュアルは公開機能の操作説明に限定しています。新しい開発作業や
-chatでは、まず [`PROJECT_STATUS_Japanese.md`](../../PROJECT_STATUS_Japanese.md) を読み、次に
-[`work_log.md`](../work_log.md) の最新記録を確認します。作業後にどの文書を更新するかは
-[`development_workflow_Japanese.md`](../development_workflow_Japanese.md) にまとめています。

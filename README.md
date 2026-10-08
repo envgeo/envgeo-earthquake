@@ -33,10 +33,6 @@ The minimal, behavior-preserving catalog validation policy is documented in
 [Japanese](docs/earthquake_validation_Japanese.md). It limits new checks to
 crash prevention, readable errors, and safe handling of user uploads.
 
-Development handoff and current release readiness:
-[PROJECT_STATUS.md](PROJECT_STATUS.md). New work sessions should read that file
-and the latest entry in [docs/work_log_English.md](docs/work_log_English.md) before editing.
-
 ---
 
 ## Overview
@@ -134,10 +130,8 @@ details, hypocenter terminology, and seismic-source limitations, should remain
 in the earthquake layer unless the same pattern is needed by other EnvGeo
 applications.
 
-During the current publication-readiness phase, EnvGeo-Earthquake must remain
-independently runnable and must not add a runtime dependency on EnvGeo-Seawater
-or a future shared core. The detailed boundary and audit record is maintained in
-[docs/publication_audit_2026-10-08.md](docs/publication_audit_2026-10-08.md).
+EnvGeo-Earthquake remains independently runnable and does not require
+EnvGeo-Seawater or a future shared core at runtime.
 
 ---
 
@@ -476,29 +470,16 @@ df.attrs["query_url"]
   Runtime dependencies plus local test tools.
 
 - `docs/`  
-  Project maintenance notes, including the work log, Japanese testing notes,
-  and release checklist.
-
-- `TODO.md`  
-  Current short-term tasks and shared-core candidates for future alignment
-  with EnvGeo-Seawater.
-
-Legacy Seawater-related directories and files may remain in the development
-workspace, but they are excluded from public contents. The Earthquake pages do
-not require ocean-chemistry datasets.
+  Bilingual user manuals, screenshots, validation notes, provider-responsibility
+  records, and testing documentation.
 
 ---
 
-## Maintenance Notes
+## Documentation Notes
 
-README files, Home update history, and `docs/` are maintained together with
-code changes. Update them when user-facing behavior, page names, data sources,
-citations, limitations, testing workflow, or the EnvGeo-Seawater relationship
-changes.
-
-The usual workflow is to edit and verify the working folder first, then copy
-the checked source/docs/test files to the Git clone for commit and push. Do not
-copy generated caches, virtual environments, or local runtime artifacts.
+The public documentation covers application use, data sources, limitations,
+validation behavior, and testing. Internal handoff records and local development
+logs are intentionally excluded from the public repository.
 
 ---
 

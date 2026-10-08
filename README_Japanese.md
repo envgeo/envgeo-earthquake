@@ -32,10 +32,6 @@ Earthquakeの現状挙動を維持する最小カタログ検証方針は
 に記録しています。新しいcheckは、crash防止、明確なerror、利用者uploadの
 安全な読込みに必要な範囲に限定します。
 
-開発作業の引継ぎと現在の公開準備状況は
-[PROJECT_STATUS_Japanese.md](PROJECT_STATUS_Japanese.md) にまとめています。新しい作業セッションでは、
-このファイルと [docs/work_log.md](docs/work_log.md) の最新記録を最初に確認します。
-
 ---
 
 ## 概要
@@ -120,9 +116,8 @@ EnvGeo-Earthquake は、構成、用語、可視化ワークフローを EnvGeo-
 一方で、USGS カタログ取得、JMA/NIED 比較、震源用語、地震データ固有の注意事項は、
 他の EnvGeo アプリでも同じ構造が必要になるまでは Earthquake 側に残します。
 
-現在の公開準備段階では、EnvGeo-Earthquake を単独で実行可能な状態に保ち、
-EnvGeo-Seawater または将来の共通コアへの実行時依存は追加しません。詳細な境界と
-監査結果は [docs/publication_audit_2026-10-08_Japanese.md](docs/publication_audit_2026-10-08_Japanese.md) に記録しています。
+EnvGeo-Earthquakeは単独で実行可能であり、EnvGeo-Seawaterまたは将来の
+共通コアを実行時に必要としません。
 
 ---
 
@@ -444,25 +439,15 @@ df.attrs["query_url"]
   実行用依存関係に加え、ローカルテスト用ツールを含みます。
 
 - `docs/`  
-  作業ログ、テストメモ、リリース前チェックリストなど、プロジェクト維持管理用の文書です。
-
-- `TODO.md`  
-  当面の修正候補と、EnvGeo-Seawater との将来的な共通コア化候補を記録します。
-
-開発workspaceには継承したSeawater関連directoryやファイルが残る場合がありますが、
-公開対象からは除外します。Earthquakeページは海洋化学datasetを必要としません。
+  日英ユーザーマニュアル、画面画像、検証方針、提供元別の利用責任、
+  テスト説明を収録しています。
 
 ---
 
-## 維持管理メモ
+## 文書について
 
-README、README_Japanese、Home の更新履歴、`docs/` は、コード変更とあわせて随時更新します。
-特に、ユーザーに見える挙動、ページ名、データソース、引用、制約、テスト手順、
-EnvGeo-Seawater との関係が変わる場合は、関連文書も同時に見直します。
-
-通常の作業手順は、作業フォルダで編集・動作確認してから、確認済みの source/docs/test ファイルを
-Git 用 clone にコピーし、commit と push の対象にする流れです。生成キャッシュ、仮想環境、
-ローカル実行時ファイルはコピーしません。
+公開文書には、アプリの利用方法、データ出典、制約、検証方法、テスト方法を収録します。
+引継ぎ記録やローカル開発用の詳細な作業ログは、公開repositoryには含めません。
 
 ---
 

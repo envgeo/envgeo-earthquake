@@ -24,6 +24,28 @@ ENV/
 LOCAL_WORKSPACE.md
 LOCAL_WORKSPACE_Japanese.md
 
+# Internal project-management and handoff records
+# 内部用の作業管理・引継ぎ記録
+/AGENTS.md
+/AGENTS_Japanese.md
+/PROJECT_STATUS.md
+/PROJECT_STATUS_Japanese.md
+/TODO.md
+/TODO_Japanese.md
+/docs/development_workflow.md
+/docs/development_workflow_Japanese.md
+/docs/work_log.md
+/docs/work_log_English.md
+/docs/publication_audit_2026-10-08.md
+/docs/publication_audit_2026-10-08_Japanese.md
+/docs/publication_roadmap.md
+/docs/publication_roadmap_Japanese.md
+/docs/public_release_scope.md
+/docs/public_release_scope_Japanese.md
+/docs/release_checklist.md
+/docs/release_checklist_Japanese.md
+/docs/capture_manual_screenshots.mjs
+
 # Test/cache outputs
 .pytest_cache/
 .tox/
